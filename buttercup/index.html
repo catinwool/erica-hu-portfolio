@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Buttercup — Erica Hu</title>
+    <meta
+      name="description"
+      content="Buttercup: an early product concept for AI-supported lifelong learning."
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..720;1,7..72,200..720&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="site">
+      <header class="top">
+        <a class="mark" href="/">Erica Hu</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a class="nav-link" href="/writing">Writing</a>
+          <a class="nav-link" href="/about">About</a>
+        </nav>
+      </header>
+      <hr class="rule" />
+
+      <main class="project">
+        <p class="project-back">
+          <a href="/">← Showcase</a>
+        </p>
+
+        <header class="project-hero">
+          <h1>Buttercup</h1>
+          <p class="project-sub">
+            An early product concept for AI-supported lifelong learning
+          </p>
+        </header>
+
+        <div class="project-media">
+          <video
+            class="work-thumb"
+            autoplay
+            loop
+            muted
+            playsinline
+            preload="metadata"
+            aria-label="Screen recording of Buttercup: AI-supported lifelong learning"
+          >
+            <source src="/videos/lifelong-learning.mp4" type="video/mp4" />
+          </video>
+          <video
+            class="work-thumb work-thumb--portrait"
+            autoplay
+            loop
+            muted
+            playsinline
+            preload="metadata"
+            aria-label="Animated All Journeys phone preview"
+          >
+            <source src="/videos/lifelong-learning-phone.mp4" type="video/mp4" />
+          </video>
+        </div>
+
+        <aside class="project-note">
+          <p>
+            <strong>A note before the case study:</strong> this project predates
+            Glia in its current form. It shares an origin story and one idea that
+            carried through — building something that pays close attention to a
+            person over time — but the product itself was built around education,
+            not memory-keeping between people. It's here as an earlier iteration
+            of the same underlying question, not as an earlier version of the
+            company.
+          </p>
+        </aside>
+
+        <hr class="project-rule" />
+
+        <section>
+          <h2>The starting question</h2>
+          <p>
+            People keep learning long after school ends, but the tools around
+            them assume they haven't. Courses assume a fixed curriculum.
+            Note-taking apps organize information without teaching anything.
+            Chat-based assistants answer a question well but forget you the
+            moment you close the tab. Nothing held the <em>shape</em> of what
+            someone was curious about across weeks or months.
+          </p>
+          <p>
+            I wanted to design for the person who has ten half-formed interests
+            and no structure to hold them — not by giving them a syllabus, but by
+            helping the structure emerge from what they were already doing.
+          </p>
+        </section>
+
+        <section>
+          <h2>Research</h2>
+          <p>
+            I spent around 150 hours on user research: interviews,
+            persona-building, and testing early concepts with a small sample
+            across the US, UK, EU, and China. Three kinds of people kept showing
+            up.
+          </p>
+          <p>
+            Lifelong learners with more curiosity than organization. One, a
+            medical student studying Arabic on the side to read poetry in the
+            original, put it simply:
+            <em>“I wish I started getting into my interests sooner.”</em> The
+            problem wasn't motivation. It was permission — a sense that scattered
+            interests needed to add up to something before they counted.
+          </p>
+          <p>
+            People mid-transition, usually career changers, who wanted structure
+            but got overwhelmed by the number of directions available. One
+            described it as needing “a feeling of where I could get to, of being
+            good at something” before she could even start.
+          </p>
+          <p>
+            Builders with too many project ideas and a habit of stalling on the
+            first one. What they needed wasn't more ambition. It was permission
+            to break a big idea into a step small enough to start today, without
+            treating the smallness as a failure of vision.
+          </p>
+        </section>
+
+        <section>
+          <h2>What I built</h2>
+          <p>Three connected surfaces, plus a model underneath them.</p>
+          <p>
+            <strong>Cosmos</strong> — a knowledge map that grew as someone
+            learned, so progress looked like a constellation forming rather than
+            a percentage bar filling up.
+          </p>
+          <p>
+            <strong>Glia HQ</strong> — a home screen built around the single
+            thread most relevant that day, instead of a dashboard trying to hold
+            everything at once.
+          </p>
+          <p>
+            <strong>Rabbit Hole</strong> — a place for ideas that hadn't found a
+            shape yet. Half-formed questions. Tangents worth remembering but not
+            yet worth acting on.
+          </p>
+          <p>
+            Underneath all three sat a five-level model — Explorer, Enthusiast,
+            Devotee, Virtuoso, Trailblazer — meant to describe how casual
+            curiosity turns into depth, and a “slow thinking” AI layer that
+            responded to what someone was actually learning instead of just
+            answering isolated questions about it.
+          </p>
+        </section>
+
+        <section>
+          <h2>Where it landed</h2>
+          <p>
+            The concept traveled further than I expected for something built solo
+            and tested with a small beta group. One user used it to plan a shift
+            into data science. Another used it to structure a move toward fluency
+            in Spanish before relocating. We ran a handful of in-person workshops
+            off the back of it — “Design Personal Growth” and “Mapping Your
+            World,” both built with collaborators and run out of a design academy
+            in China — where people used the framework on paper before ever
+            opening the app.
+          </p>
+          <p>
+            But the case that stayed with me longest didn't fit the “lifelong
+            learning” frame at all. A user was recording conversations with her
+            mother — not to study anything, but so the two of them could
+            understand each other better through what they remembered together.
+            It kept surfacing in interviews and beta feedback, even though
+            nothing in the product was built for it.
+          </p>
+          <p>
+            That thread is the one that eventually became Glia in its current
+            form: a place to keep the record of a relationship, not a curriculum.
+          </p>
+        </section>
+
+        <section>
+          <h2>What I'd do differently</h2>
+          <p>
+            The five-level model was more scaffolding than most people needed. A
+            habit like this benefits more from removing friction than adding
+            structure to climb.
+          </p>
+          <p>
+            I also over-invested early in market sizing and B2B revenue
+            projections — the kind of forecasting that looks rigorous in a pitch
+            deck and means very little before you have real usage data to build
+            from. It was time better spent talking to the fifteenth user than
+            modeling the fifteen-thousandth.
+          </p>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

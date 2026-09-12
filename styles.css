@@ -159,6 +159,152 @@ a:focus-visible {
   white-space: nowrap;
 }
 
+.project {
+  width: 100%;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 2rem var(--pad) 4.5rem;
+}
+
+.project-back {
+  margin: 0 0 1.75rem;
+  font-size: 0.98rem;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.project-back a {
+  text-decoration: none;
+}
+
+.project-back a:hover {
+  color: var(--accent);
+}
+
+.project-hero {
+  margin-bottom: 1.75rem;
+}
+
+.project-hero h1 {
+  margin: 0;
+  font-size: clamp(2.1rem, 5vw, 2.85rem);
+  font-weight: 480;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.project-sub {
+  margin: 0.7rem 0 0;
+  color: var(--ink-soft);
+  font-size: 1.2rem;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.project-meta {
+  margin: 0.85rem 0 0;
+  color: var(--ink-faint);
+  font-size: 0.98rem;
+  font-style: italic;
+  line-height: 1.45;
+}
+
+.project-media {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin: 0 0 2rem;
+}
+
+.project-media .work-thumb {
+  width: auto;
+  flex: 1 1 0;
+  max-width: calc(70% - 0.375rem);
+  aspect-ratio: auto;
+  object-fit: unset;
+}
+
+.project-media .work-thumb--portrait {
+  flex: 0 0 auto;
+  max-width: 26%;
+}
+
+.project-note {
+  margin: 0 0 1.75rem;
+  padding: 1.1rem 0;
+  color: var(--ink-soft);
+  font-size: 1.02rem;
+  line-height: 1.55;
+}
+
+.project-note p {
+  margin: 0;
+}
+
+.project-rule {
+  height: 1px;
+  margin: 0 0 2rem;
+  background: var(--rule);
+  border: 0;
+}
+
+.project section {
+  margin-bottom: 2.25rem;
+}
+
+.project h2 {
+  margin: 0 0 0.85rem;
+  font-size: 1.35rem;
+  font-weight: 520;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.project p {
+  margin: 0 0 1rem;
+  color: var(--ink);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.project p:last-child {
+  margin-bottom: 0;
+}
+
+.project em {
+  font-style: italic;
+}
+
+.project-list {
+  margin: 0 0 1.15rem;
+  padding: 0 0 0 1.15rem;
+  color: var(--ink);
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+
+.project-list li {
+  margin: 0 0 0.35rem;
+}
+
+.project-list li:last-child {
+  margin-bottom: 0;
+}
+
+.project-links {
+  margin: 2.5rem 0 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-size: 1.02rem;
+  font-style: italic;
+  line-height: 1.7;
+}
+
+.project-links a {
+  color: var(--ink);
+}
+
 .rule {
   height: 1px;
   margin: 0 var(--pad);
@@ -235,6 +381,33 @@ a:focus-visible {
   grid-template-columns: minmax(12rem, 1.15fr) minmax(12rem, 0.85fr);
   gap: 1.25rem 1.75rem;
   align-items: start;
+}
+
+.work-item--film {
+  grid-template-columns: minmax(12rem, 1.15fr) minmax(12rem, 0.85fr);
+}
+
+.work-film {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.work-thumb--film {
+  width: 100%;
+  max-width: 42rem;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.work-credit {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 0.95rem;
+  font-style: italic;
+  line-height: 1.35;
 }
 
 .work-media {
@@ -562,11 +735,23 @@ a.fun-card:focus-visible h3 {
     gap: 1rem;
   }
 
+  .work-thumb--film {
+    max-width: none;
+  }
+
   .work-media {
     flex-wrap: wrap;
   }
 
   .work-media .work-thumb--portrait {
+    max-width: 40%;
+  }
+
+  .project-media {
+    flex-wrap: wrap;
+  }
+
+  .project-media .work-thumb--portrait {
     max-width: 40%;
   }
 
