@@ -6,7 +6,7 @@
     <title>Buttercup — Erica Hu</title>
     <meta
       name="description"
-      content="Buttercup: an early product concept for AI-supported lifelong learning."
+      content="Buttercup: playful software for self-directed learning."
     />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -34,45 +34,38 @@
         </p>
 
         <header class="project-hero">
+          <img
+            class="brand-mark brand-mark--lg"
+            src="/images/buttercup-logo.png"
+            alt=""
+            width="507"
+            height="456"
+          />
           <h1>Buttercup</h1>
           <p class="project-sub">
-            An early product concept for AI-supported lifelong learning
+            Playful software for self-directed learning
           </p>
         </header>
 
-        <div class="project-media">
-          <video
+        <figure class="project-figure">
+          <img
             class="work-thumb"
-            autoplay
-            loop
-            muted
-            playsinline
-            preload="metadata"
-            aria-label="Screen recording of Buttercup: AI-supported lifelong learning"
-          >
-            <source src="/videos/lifelong-learning.mp4" type="video/mp4" />
-          </video>
-          <video
-            class="work-thumb work-thumb--portrait"
-            autoplay
-            loop
-            muted
-            playsinline
-            preload="metadata"
-            aria-label="Animated All Journeys phone preview"
-          >
-            <source src="/videos/lifelong-learning-phone.mp4" type="video/mp4" />
-          </video>
-        </div>
+            src="/images/buttercup-intro.jpg"
+            alt="Buttercup intro screens — Cosmos, The Meadow, and Rabbit Hole"
+            width="3000"
+            height="1688"
+          />
+          <figcaption>Cosmos, The Meadow, and Rabbit Hole</figcaption>
+        </figure>
 
         <aside class="project-note">
           <p>
             <strong>A note before the case study:</strong> this project predates
-            Glia in its current form. It shares an origin story and one idea that
-            carried through — building something that pays close attention to a
-            person over time — but the product itself was built around education,
-            not memory-keeping between people. It's here as an earlier iteration
-            of the same underlying question, not as an earlier version of the
+            Glia in its current form. It shares one idea that carried through,
+            building something that pays close attention to a person over time,
+            but the product itself was built around education, not
+            memory-keeping between people. It's here as an earlier iteration of
+            the same underlying question, not as an earlier version of the
             company.
           </p>
         </aside>
@@ -80,118 +73,220 @@
         <hr class="project-rule" />
 
         <section>
-          <h2>The starting question</h2>
+          <h2>The quest</h2>
           <p>
             People keep learning long after school ends, but the tools around
             them assume they haven't. Courses assume a fixed curriculum.
             Note-taking apps organize information without teaching anything.
-            Chat-based assistants answer a question well but forget you the
-            moment you close the tab. Nothing held the <em>shape</em> of what
-            someone was curious about across weeks or months.
+            Chat-based assistants answer a question well, then forget you the
+            moment you close the tab. Nothing held the shape of what someone was
+            curious about across weeks or months. No board. No way to watch a
+            game in progress.
           </p>
           <p>
-            I wanted to design for the person who has ten half-formed interests
-            and no structure to hold them — not by giving them a syllabus, but by
-            helping the structure emerge from what they were already doing.
+            I wanted to build a game for the person with ten half-formed
+            interests and no structure to hold them. Not a syllabus. Somewhere
+            for the curiosity to move.
           </p>
         </section>
 
+        <section class="project-gallery" aria-label="Buttercup introduction diagrams">
+          <div class="project-scroll">
+            <figure class="project-scroll-item">
+              <img
+                src="/images/buttercup-key-elements.jpg"
+                alt="Key elements of lifelong learning: big picture, actionable steps, structure, and personalization"
+                width="3000"
+                height="1688"
+              />
+              <figcaption>Key elements of lifelong learning</figcaption>
+            </figure>
+            <figure class="project-scroll-item">
+              <img
+                src="/images/buttercup-challenges.jpg"
+                alt="Challenges: inequality in access, copy-and-paste learning, drab curricula, and information overload"
+                width="3000"
+                height="1688"
+              />
+              <figcaption>Challenges in lifelong learning</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <figure class="project-figure">
+          <img
+            class="work-thumb"
+            src="/images/buttercup-research-board.jpg"
+            alt="Phase 0 research board organizing user interview insights into needs, existing habits, what’s working, and knowledge visualization"
+            width="3000"
+            height="2202"
+          />
+          <figcaption>User interview insights organization — Phase 0 findings &amp; notes</figcaption>
+        </figure>
+
         <section>
-          <h2>Research</h2>
+          <h2>Scouting the players</h2>
           <p>
-            I spent around 150 hours on user research: interviews,
-            persona-building, and testing early concepts with a small sample
-            across the US, UK, EU, and China. Three kinds of people kept showing
+            I spent around 150 hours in the field: interviews, persona work,
+            testing early concepts with a small group across the US, UK, EU, and
+            China. Three kinds of players kept showing up.
+          </p>
+          <p>
+            <strong>The Collector.</strong> Curious about everything, organized
+            about nothing. A medical student studying Arabic on the side to read
+            poetry in the original told me, “I wish I started getting into my
+            interests sooner.” It wasn't a motivation problem. Scattered
+            interests needed to add up to something before they felt like they
+            counted.
+          </p>
+          <p>
+            <strong>The Wanderer.</strong> Mid-transition, usually a career
+            change, frozen by how many directions were available. She wanted “a
+            feeling of where I could get to, of being good at something” before
+            she'd even start moving.
+          </p>
+          <p>
+            <strong>The Builder.</strong> More project ideas than time, stalling
+            out on the first one. Ambition wasn't the shortage. Permission to
+            make the first step small enough to actually take was.
+          </p>
+        </section>
+
+        <section class="project-gallery" aria-label="User portraits from research">
+          <div class="project-scroll">
+            <figure class="project-scroll-item">
+              <img
+                src="/images/buttercup-persona-haniya.jpg"
+                alt="B2C user portrait: Haniya, 24 — Lifelong Learner"
+                width="3000"
+                height="1688"
+              />
+              <figcaption>Haniya — Lifelong Learner</figcaption>
+            </figure>
+            <figure class="project-scroll-item">
+              <img
+                src="/images/buttercup-persona-phoebe.jpg"
+                alt="B2C user portrait: Phoebe, 30 — Self-Improvement Seeker"
+                width="3000"
+                height="1688"
+              />
+              <figcaption>Phoebe — Self-Improvement Seeker</figcaption>
+            </figure>
+            <figure class="project-scroll-item">
+              <img
+                src="/images/buttercup-persona-charlie.jpg"
+                alt="B2C user portrait: Charlie, 22 — The Entrepreneur"
+                width="3000"
+                height="1688"
+              />
+              <figcaption>Charlie — The Entrepreneur</figcaption>
+            </figure>
+            <figure class="project-scroll-item">
+              <img
+                src="/images/buttercup-user-characteristics.jpg"
+                alt="Bubble chart of B2C user characteristics showing the target user zone"
+                width="3000"
+                height="1688"
+              />
+              <figcaption>B2C user characteristics — target user zone</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section class="project-gallery" aria-label="Buttercup seed user cases">
+          <div class="project-scroll">
+            <figure class="project-scroll-item">
+              <img
+                src="/images/buttercup-user-cases-1.jpg"
+                alt="Real Buttercup seed user cases table covering personas, learning levels, goals, and quotes"
+                width="3000"
+                height="1688"
+              />
+              <figcaption>Seed user cases — goals and quotes</figcaption>
+            </figure>
+            <figure class="project-scroll-item">
+              <img
+                src="/images/buttercup-user-cases-2.jpg"
+                alt="Buttercup UX for seed user cases: inspiration, tasks, and path by persona"
+                width="3000"
+                height="1688"
+              />
+              <figcaption>Seed user cases — Buttercup UX</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section>
+          <h2>How to play</h2>
+          <p>Three connected screens, plus a level system underneath them.</p>
+          <p>
+            <strong>Cosmos.</strong> The map. It grew as someone learned, so
+            progress looked like a constellation forming instead of a bar filling
             up.
           </p>
           <p>
-            Lifelong learners with more curiosity than organization. One, a
-            medical student studying Arabic on the side to read poetry in the
-            original, put it simply:
-            <em>“I wish I started getting into my interests sooner.”</em> The
-            problem wasn't motivation. It was permission — a sense that scattered
-            interests needed to add up to something before they counted.
+            <strong>The Meadow.</strong> Home base. Built around the single
+            thread most worth returning to that day, rather than a wall of unread
+            everything.
           </p>
           <p>
-            People mid-transition, usually career changers, who wanted structure
-            but got overwhelmed by the number of directions available. One
-            described it as needing “a feeling of where I could get to, of being
-            good at something” before she could even start.
+            <strong>Rabbit Hole.</strong> The sandbox. A place for half-formed
+            questions and tangents worth remembering but not yet worth acting on.
           </p>
           <p>
-            Builders with too many project ideas and a habit of stalling on the
-            first one. What they needed wasn't more ambition. It was permission
-            to break a big idea into a step small enough to start today, without
-            treating the smallness as a failure of vision.
+            Underneath all three sat a five-rank level system: Explorer,
+            Enthusiast, Devotee, Virtuoso, Trailblazer, tracking how casual
+            curiosity turns into depth. Instead of a scorekeeper, a “slow
+            thinking” AI layer behaved more like a narrator. It responded to what
+            someone was actually learning instead of quizzing them about it.
           </p>
         </section>
 
         <section>
-          <h2>What I built</h2>
-          <p>Three connected surfaces, plus a model underneath them.</p>
+          <h2>Playtesting</h2>
           <p>
-            <strong>Cosmos</strong> — a knowledge map that grew as someone
-            learned, so progress looked like a constellation forming rather than
-            a percentage bar filling up.
+            The game traveled further than I expected for something built solo
+            and tested with a small beta group. One player used it to plan a
+            shift into data science. Another used it to build fluency in Spanish
+            before a move. We ran a couple of in-person workshops off the back of
+            it,
+            <a
+              href="https://www.erica-hu.com/p/design-personal-growth"
+              target="_blank"
+              rel="noreferrer"
+              >“Design Personal Growth”</a
+            >
+            and “Mapping Your World,” both built with collaborators and hosted at
+            a design academy in China, where people played the game on paper
+            before ever opening the app.
           </p>
           <p>
-            <strong>Glia HQ</strong> — a home screen built around the single
-            thread most relevant that day, instead of a dashboard trying to hold
-            everything at once.
+            The run that stayed with me longest broke the rules of the game
+            entirely. A player was recording conversations with her mother, not
+            to study anything, just so the two of them could understand each
+            other better through what they remembered together. It kept showing
+            up in interviews and feedback even though nothing in the game was
+            built for it.
           </p>
           <p>
-            <strong>Rabbit Hole</strong> — a place for ideas that hadn't found a
-            shape yet. Half-formed questions. Tangents worth remembering but not
-            yet worth acting on.
-          </p>
-          <p>
-            Underneath all three sat a five-level model — Explorer, Enthusiast,
-            Devotee, Virtuoso, Trailblazer — meant to describe how casual
-            curiosity turns into depth, and a “slow thinking” AI layer that
-            responded to what someone was actually learning instead of just
-            answering isolated questions about it.
-          </p>
-        </section>
-
-        <section>
-          <h2>Where it landed</h2>
-          <p>
-            The concept traveled further than I expected for something built solo
-            and tested with a small beta group. One user used it to plan a shift
-            into data science. Another used it to structure a move toward fluency
-            in Spanish before relocating. We ran a handful of in-person workshops
-            off the back of it — “Design Personal Growth” and “Mapping Your
-            World,” both built with collaborators and run out of a design academy
-            in China — where people used the framework on paper before ever
-            opening the app.
-          </p>
-          <p>
-            But the case that stayed with me longest didn't fit the “lifelong
-            learning” frame at all. A user was recording conversations with her
-            mother — not to study anything, but so the two of them could
-            understand each other better through what they remembered together.
-            It kept surfacing in interviews and beta feedback, even though
-            nothing in the product was built for it.
-          </p>
-          <p>
-            That thread is the one that eventually became Glia in its current
-            form: a place to keep the record of a relationship, not a curriculum.
+            That's the thread that eventually became the seed of the project I'm
+            building now: a place to keep the record of a relationship, not a
+            curriculum.
           </p>
         </section>
 
         <section>
-          <h2>What I'd do differently</h2>
+          <h2>Patch notes</h2>
           <p>
-            The five-level model was more scaffolding than most people needed. A
-            habit like this benefits more from removing friction than adding
+            The level system was over-engineered. Five ranks is a lot of
+            scaffolding for a habit that mostly needed less friction, not more
             structure to climb.
           </p>
           <p>
-            I also over-invested early in market sizing and B2B revenue
-            projections — the kind of forecasting that looks rigorous in a pitch
-            deck and means very little before you have real usage data to build
-            from. It was time better spent talking to the fifteenth user than
-            modeling the fifteen-thousandth.
+            The economy was fictional. I spent real time modeling B2B revenue and
+            5% conversion rates before I had enough real players to know if
+            either number meant anything. That time would have been better spent
+            talking to player sixteen.
           </p>
         </section>
       </main>
