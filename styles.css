@@ -206,10 +206,26 @@ a:focus-visible {
   margin: 0 0 2rem;
 }
 
-.project-media .work-thumb {
-  width: auto;
+.project-media--stack {
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.project-media--stack .project-figure {
+  flex: none;
+  width: 100%;
+}
+
+.project-media .project-figure {
   flex: 1 1 0;
-  max-width: calc(70% - 0.375rem);
+  min-width: 0;
+  margin: 0;
+}
+
+.project-media .work-thumb {
+  width: 100%;
+  flex: none;
+  max-width: 100%;
   aspect-ratio: auto;
   object-fit: unset;
 }
@@ -399,7 +415,6 @@ a:focus-visible {
   border: 0;
 }
 
-.intro,
 .page,
 .foot {
   width: 100%;
@@ -408,29 +423,120 @@ a:focus-visible {
   margin-right: auto;
 }
 
+.intro,
 .showcase,
-.fun {
+.fun,
+.outcomes,
+.methods,
+.selected-light {
   width: 100%;
   max-width: none;
 }
 
 .intro {
-  padding: 2.4rem var(--pad) 2.1rem;
+  padding: 2.4rem var(--pad) 1.5rem;
+  text-align: left;
 }
 
-.intro p {
+.intro-title {
   margin: 0;
-  max-width: 40rem;
-  font-size: clamp(1.35rem, 2.3vw, 1.7rem);
-  font-style: italic;
-  font-weight: 400;
-  line-height: 1.38;
-  font-optical-sizing: auto;
+  max-width: min(52rem, 100%);
+  font-size: clamp(1.55rem, 3vw, 2.15rem);
+  font-weight: 480;
+  line-height: 1.28;
+  letter-spacing: -0.02em;
+  text-align: left;
 }
 
-.intro em {
-  font-style: normal;
-  font-weight: 480;
+.intro-support {
+  margin: 1.15rem 0 0;
+  max-width: min(48rem, 100%);
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.intro-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 1.35rem;
+  margin-top: 1.5rem;
+  font-size: 1rem;
+}
+
+.intro-links a {
+  text-decoration-color: var(--rule);
+}
+
+.outcomes,
+.methods,
+.selected-light {
+  padding: 0.5rem 0 0.25rem;
+}
+
+.outcomes .section-label,
+.methods .section-label,
+.selected-light .section-label,
+.showcase .section-label {
+  margin-bottom: 0.85rem;
+}
+
+.outcomes-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--pad) 1.75rem;
+  max-width: 48rem;
+}
+
+.outcomes-list li {
+  padding: 0.35rem 0;
+  color: var(--ink-soft);
+  font-size: 1.02rem;
+  line-height: 1.45;
+}
+
+.outcomes-list li::before {
+  content: "·";
+  margin-right: 0.65rem;
+  color: var(--ink-faint);
+}
+
+.methods-line {
+  margin: 0;
+  padding: 0 var(--pad) 2rem;
+  max-width: 52rem;
+  color: var(--ink-soft);
+  font-size: 1.02rem;
+  line-height: 1.55;
+}
+
+.project-methods {
+  margin: 0.5rem 0 1.5rem;
+}
+
+.project-methods h2 {
+  margin: 0 0 0.55rem;
+}
+
+.project-methods p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 1.02rem;
+  line-height: 1.55;
+  max-width: 42rem;
+}
+
+.work-label {
+  margin: 0 0 0.25rem;
+  color: var(--ink-faint);
+  font-size: 0.88rem;
+  font-style: italic;
+}
+
+.about-resume {
+  margin: 1rem 0 0;
+  font-size: 0.95rem;
 }
 
 .section-label {
@@ -444,10 +550,6 @@ a:focus-visible {
 
 .showcase {
   padding-bottom: 0.5rem;
-}
-
-.showcase .section-label {
-  margin-bottom: 0.85rem;
 }
 
 .work {
@@ -553,9 +655,69 @@ a.work-item:focus-visible {
   padding-top: 1.25rem;
 }
 
+.brand-mark--footer.brand-mark--wordmark {
+  width: min(16rem, 100%);
+  margin: auto 0 0;
+  padding-top: 1.25rem;
+}
+
 .brand-mark--lg {
   width: 6.5rem;
   margin: 0 0 0.85rem;
+}
+
+.brand-mark--wordmark-lg {
+  width: min(18rem, 85%);
+  height: auto;
+}
+
+.client-logos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem 1.1rem;
+  margin-top: 1rem;
+}
+
+.client-logos img {
+  display: block;
+  width: auto;
+  height: 1.55rem;
+  max-width: 4.5rem;
+  object-fit: contain;
+  border-radius: 0;
+}
+
+.client-logos--page {
+  padding: 0 var(--pad) 1.75rem;
+  max-width: 48rem;
+  margin: 0;
+  gap: 1.25rem 1.75rem;
+}
+
+.client-logos--page img {
+  height: 2.35rem;
+  max-width: 7.5rem;
+}
+
+.client-logo-inline {
+  display: block;
+  width: auto;
+  height: 1.75rem;
+  max-width: 5.5rem;
+  margin: 0 0 0.55rem;
+  object-fit: contain;
+  border-radius: 0;
+}
+
+.client-logo-inline--wide {
+  height: 1.45rem;
+  max-width: 8.5rem;
+}
+
+.work-copy .client-logos {
+  margin-top: 0.85rem;
+  margin-bottom: 0.15rem;
 }
 
 .work-item h3,
@@ -636,6 +798,7 @@ video.work-thumb {
 .fun-flow {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: clamp(3.5rem, 6vw, 5.5rem);
   padding: 2.75rem var(--pad) 5rem;
   overflow: visible;
@@ -868,6 +1031,28 @@ video.work-thumb {
   transform: rotate(-2.5deg);
 }
 
+.fun-card--j {
+  width: 18rem;
+  max-width: 100%;
+  margin-left: 12%;
+  align-self: flex-start;
+}
+
+.fun-card--j .fun-postit {
+  background: #f5d4d0;
+  width: 10.5rem;
+  height: 10.5rem;
+  bottom: -3.6rem;
+  left: -3.3rem;
+  right: auto;
+  transform: rotate(2deg);
+}
+
+.fun-card--j .work-thumb {
+  width: 100%;
+  max-width: 18rem;
+}
+
 .fun-card--podcast .fun-stage::after {
   content: "";
   position: absolute;
@@ -956,9 +1141,9 @@ video.work-thumb {
 
 .lede {
   margin: 0;
-  font-size: clamp(1.35rem, 2.2vw, 1.7rem);
-  line-height: 1.38;
-  max-width: 22ch;
+  font-size: clamp(1.2rem, 2vw, 1.45rem);
+  line-height: 1.4;
+  max-width: 38ch;
 }
 
 .lede + .lede-sub {
@@ -966,7 +1151,7 @@ video.work-thumb {
   color: var(--ink-soft);
   font-size: 1.05rem;
   line-height: 1.5;
-  max-width: 36ch;
+  max-width: 42ch;
 }
 
 .block {
@@ -1113,10 +1298,15 @@ video.work-thumb {
   .fun-card--f,
   .fun-card--g,
   .fun-card--h,
-  .fun-card--i {
+  .fun-card--i,
+  .fun-card--j {
     width: 100%;
     max-width: 100%;
     margin-left: 0;
+  }
+
+  .fun-card--j {
+    max-width: 18rem;
   }
 
   .fun-postit {
@@ -1158,7 +1348,8 @@ video.work-thumb {
   .fun-card--f .fun-postit,
   .fun-card--g .fun-postit,
   .fun-card--h .fun-postit,
-  .fun-card--i .fun-postit {
+  .fun-card--i .fun-postit,
+  .fun-card--j .fun-postit {
     transform: none;
   }
 }
