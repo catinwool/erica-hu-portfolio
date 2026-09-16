@@ -6,7 +6,7 @@
     <title>Glia: Erica Hu</title>
     <meta
       name="description"
-      content="Glia: a memory composer for more thoughtful technology. Founded by Erica Hu."
+      content="Glia: a memory composer for keeping stories and keepsakes with the people they belong to. Founded by Erica Hu."
     />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -15,7 +15,7 @@
       href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..720;1,7..72,200..720&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260915af" />
+    <link rel="stylesheet" href="/styles.css?v=20260915bd" />
   </head>
   <body>
     <div class="site">
@@ -25,26 +25,42 @@
       <main class="project">
 
         <header class="project-hero">
-          <img
-            class="brand-mark brand-mark--lg"
-            src="/images/glia-logo.png"
-            alt=""
-            width="150"
-            height="150"
-          />
+          <a
+            class="brand-mark-link"
+            href="https://gliahq.com/"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Glia website"
+          >
+            <img
+              class="brand-mark brand-mark--lg"
+              src="/images/glia-logo.png"
+              alt="Glia"
+              width="150"
+              height="150"
+            />
+          </a>
           <h1>A memory composer for more thoughtful technology</h1>
-          <p class="project-sub">Glia</p>
-          <p class="project-meta">
-            A multiplayer shoebox for memories · privacy-first ambient memory<br />
-            Founder and design engineer at a venture-backed startup. Leading
-            research, product strategy, interaction design, prototyping, and
-            implementation.<br />
-            Present · Backed by
-            <a href="https://restlessegg.com/about" target="_blank" rel="noreferrer">Restless Egg</a>
+          <p class="project-sub">
+            <a href="https://gliahq.com/" target="_blank" rel="noreferrer">Glia</a>
           </p>
         </header>
 
-        <div class="project-film">
+        <nav class="project-toc" aria-label="On this page">
+          <p class="project-toc-label">On this page</p>
+          <ol>
+            <li><a href="#belief">The belief</a></li>
+            <li><a href="#origin">Where it came from</a></li>
+            <li><a href="#designed">What I designed and built</a></li>
+            <li>
+              <a href="#memory">Memory, AI, and human-centric design</a>
+            </li>
+            <li><a href="#in-public">In public</a></li>
+            <li><a href="#methods">Methods</a></li>
+          </ol>
+        </nav>
+
+        <div class="project-film project-film--hero">
           <video
             class="work-thumb"
             autoplay
@@ -60,25 +76,64 @@
           <p class="work-credit">Filmed, produced, written by Erica Hu</p>
         </div>
 
-        <div class="project-media project-media--single">
-          <img
-            class="work-thumb work-thumb--on-white"
-            src="/images/glia.jpg"
-            alt="Glia app screens: journal, today, and shared collection"
-            width="1024"
-            height="678"
-          />
-        </div>
-
         <section>
+          <p class="project-lead">
+            Glia is a place to keep the texture of a life: stories, keepsakes,
+            and the people they belong to. You compose digital shoeboxes of
+            moments and gift them. Underneath is a privacy-first memory system
+            that pays attention over time, so conversations and stray thoughts
+            can become something you can hold, return to, and share.
+          </p>
+          <p>
+            I founded the company in 2025 and work the full cycle of design,
+            research, engineering, and marketing to bring a futuristic yet
+            humanistic concept to life. Ambient AI design is a big experiment
+            Glia pioneered: the interface language, the memory model, and the
+            experience of composing a shoebox with someone else. The product is
+            live as an iOS app and on the web.
+          </p>
+        </section>
+
+        <section id="belief">
           <h2>The belief</h2>
           <p>
             Memory has always been about stories and keepsakes: dried flowers, a
             boarding pass, letters and postcards, photos of toothy smiles, a
             grandmother’s recipe written down by hand. Most software treats
-            memory as content to scroll past. Glia is built for another kind of
-            keeping: composing attention into a record of a relationship.
+            memory as content to scroll past.
           </p>
+          <p>
+            Every culture has built practices for preserving what matters: oral
+            traditions, rites of passage, the careful curation of objects and
+            photographs and shared meals. Those were technologies of meaning,
+            ways of saying this moment counted, this person mattered, this is
+            the shape of my life. Glia is built in that tradition: composing
+            attention into a record of a relationship, rather than a feed.
+          </p>
+          <div class="project-film project-film--portrait project-film--inline">
+            <video
+              class="work-thumb"
+              autoplay
+              loop
+              muted
+              playsinline
+              preload="metadata"
+              width="720"
+              height="1280"
+              aria-label="Remember the bright notes of daisies saturated by the rain?"
+            >
+              <source src="/videos/glia-daisies.mp4" type="video/mp4" />
+            </video>
+            <p class="work-credit">
+              Remember the bright notes of daisies saturated by the rain?
+              <a
+                href="https://www.instagram.com/p/Dcd2LO2MMuK/"
+                target="_blank"
+                rel="noreferrer"
+                >@gliahq</a
+              >
+            </p>
+          </div>
           <blockquote class="project-insight">
             How do you design technology that helps people remember, relive, and
             reflect with the people they care about, without turning intimacy
@@ -86,55 +141,134 @@
           </blockquote>
         </section>
 
-        <section>
-          <h2>What I researched</h2>
+        <section id="origin">
+          <h2>Where it came from</h2>
           <p>
-            Glia grew out of years of circling a related question: how do you
-            build software that pays close attention to a person over time? An
-            earlier product concept, Buttercup, was framed around lifelong
-            learning. In research and beta feedback, something else kept
-            surfacing: people recording conversations with family not to study
-            anything, but so they could understand each other better through what
-            they remembered together.
+            The idea surfaced in Shanghai in summer 2024, during a visit to my
+            aunt’s: a city so relentlessly alive it makes you feel like you’re
+            always on the edge of missing something. The name comes from glial
+            cells, the connective tissue of the brain that holds everything
+            together without taking the credit.
+          </p>
+          <p>
+            An earlier product exploration,
+            <a href="/buttercup">Buttercup</a>, was framed around lifelong
+            learning. In research, something else kept surfacing: people
+            recording conversations with family not to study anything, but so
+            they could understand each other better through what they remembered
+            together. That ethnographic thread (memory as relationship, not
+            curriculum) is what Glia grew from.
           </p>
           <blockquote class="project-insight">
-            That ethnographic thread (memory as relationship, not curriculum)
-            became Glia.
+            The question I keep returning to is how to engineer and design
+            empathy inside a piece of technology.
           </blockquote>
         </section>
 
-        <section>
+        <section id="designed">
           <h2>What I designed and built</h2>
           <p>
-            As founder and design engineer I work across research, product
-            strategy, interaction design, prototyping, and implementation,
-            shaping the interface language, the memory model, and the experience
-            of composing and sharing a shoebox with someone else.
+            The product is organized around people, place, and stories: the
+            grammar of a life. You curate shoeboxes of keepsakes, small on
+            purpose (playing favorites is the point), and give them to someone.
+            Conversations and stray thoughts become artifacts: a dinner that
+            tasted like home, a friend’s news, a walk after rain.
           </p>
+          <figure class="project-figure project-figure--inline">
+            <img
+              class="work-thumb work-thumb--on-white"
+              src="/images/glia.jpg"
+              alt="Glia app screens: journal, today, and shared collection"
+              width="1024"
+              height="678"
+            />
+            <figcaption>
+              Journal, Today, and a shared collection
+            </figcaption>
+          </figure>
           <p>
-            You curate digital shoeboxes of moments and gift them to people you
-            care about. The product is live as an iOS app and on the web, with a
-            public product site and personal shoeboxes in use.
+            I designed the interface to behave more like a good friend than a
+            feed. It holds space, listens to what is said and unsaid, and does
+            not demand attention several times a day. When you spiral, it can
+            gently challenge. The rest of the time, it pays attention. That is
+            the ambient AI experiment: intelligence that stays with a life
+            without asking to be the center of the day. The commitments
+            underneath are poetic computing, an organic interface that grows
+            with you, and the belief that attention is all we have. Spend it on
+            what matters.
           </p>
         </section>
 
-        <section>
-          <h2>How it works</h2>
+        <section id="memory">
+          <h2>Memory, AI, and human-centric design</h2>
+          <p class="project-label">Memory architecture</p>
           <p>
-            Glia is a place to keep the record of a relationship: stories,
-            keepsakes, and the small things that make someone feel close again.
-            Shared collections grow over time. The design commitments are poetic
-            computing, wonder, organic interfaces that grow with you, and the
-            belief that attention is all we have. Spend it on what matters.
+            Most products remember a chat log. Glia is designed to remember a
+            day in a life. A lot of the research and engineering is long-term
+            memory: how an AI can actually know who you are, not just what you
+            typed in the last session. Conversations, notes, photos, and the rest
+            are treated as ears, not as separate products. They land in one
+            ledger: episodes with people, place, and what actually happened. A
+            retrieval index sits on top of that — semantic search, keywords, and
+            recency together — so a scene can be found later without turning the
+            whole life into a feed.
           </p>
+          <p>
+            The composing model is the ethos made structural: dot to line to
+            story. Evidence first, then structure, then narrative — never the
+            other way around. Moments freeze once they are composed. A keepsake
+            is one bounded scene, held as the person’s own words plus a witness
+            read of the context, not a pile of quotes ripped out of time.
+          </p>
+          <blockquote class="project-insight">
+            When something is handed back, it should be a postcard, not a
+            newspaper.
+          </blockquote>
+          <p class="project-label">AI architecture</p>
+          <p>
+            Ambient AI design is that experiment made into a system: not a chat
+            box waiting to be prompted, but something that can live in the
+            background of a day and speak only when it has something worth
+            handing back. Each chat turn is read once for subtext, stance, and
+            how much memory to bring in. Retrieval is allowed to be wide; what
+            reaches the reply is slim: a few atomic facts for this beat, not a
+            dossier. The model is a friend with long-term memory, not a coach:
+            it only knows you if that memory work underneath can hold who you
+            are over time. Replies stay short on purpose. If someone already
+            named their next move, the system stops. If they are hurting, it
+            receives first and does not assign homework.
+          </p>
+          <p>
+            Language models polish summaries and compose stories, but they do
+            not get to decide whether a memory exists. Existence is evidence.
+            Quality gates sit after compose. The system is also designed to stay
+            silent: handing the wrong scene back is worse than handing nothing.
+          </p>
+          <p class="project-label">Human-centric design</p>
+          <p>
+            The hardest design work is epistemic. Fragments of a life are not a
+            proof. Two days may rhyme; they are not a syllogism. The architecture
+            is not allowed to invent cause. It can place two evidenced scenes
+            next to each other and leave the because to the person.
+          </p>
+          <p>
+            A memory is only gifted back from someone’s own voice — a caption, a
+            journal line, something they said — not from a stats import. Ambient
+            photo listening and contacts are opt-in, and contacts never mean the
+            full address book. People pages are built to answer why this person
+            matters: what they say, what you did together — not an inventory of
+            story cards.
+          </p>
+          <blockquote class="project-insight">
+            Attention is the design constraint. Spend it on what matters,
+            including the choice not to speak.
+          </blockquote>
         </section>
 
-        <section>
-          <h2>Venture context</h2>
+        <section id="in-public">
+          <h2>In public</h2>
           <p>
-            Glia is venture-backed through
-            <a href="https://restlessegg.com/about" target="_blank" rel="noreferrer">Restless Egg</a>,
-            an accelerator for artist-founders. The work has been featured in
+            Glia has been featured in
             <a
               href="https://www.dazeddigital.com/art-photography/article/69674/1/radically-rethink-what-means-to-make-art-restless-egg-technology-berlin-deepmind"
               target="_blank"
@@ -142,40 +276,84 @@
               >Dazed</a
             >, and connected to public showcases including the Southbank Centre’s
             Creative Intelligence Festival and Tate Modern’s Evolving Studio
-            programme.
+            programme. In London I also run
+            <a href="https://luma.com/glia" target="_blank" rel="noreferrer"
+              >The Wonder Lab</a
+            >, Glia’s offline community for creative work.
           </p>
-        </section>
-
-        <section>
-          <h2>Writing</h2>
           <p>
-            I write about memory, attention, and building Glia on the
+            Some of that work lives off the screen: postcards left in London
+            parks, and the app as something you carry.
+          </p>
+          <div class="project-films">
+            <div class="project-film project-film--portrait">
+              <video
+                class="work-thumb"
+                autoplay
+                loop
+                muted
+                playsinline
+                preload="metadata"
+                width="720"
+                height="1280"
+                aria-label="Look for Glia postcards with special messages in London parks"
+              >
+                <source src="/videos/glia-postcards.mp4" type="video/mp4" />
+              </video>
+              <p class="work-credit">
+                Postcards in London parks
+                <a
+                  href="https://www.instagram.com/reel/DcODqoFs-3O/"
+                  target="_blank"
+                  rel="noreferrer"
+                  >@gliahq</a
+                >
+              </p>
+            </div>
+            <div class="project-film project-film--portrait">
+              <video
+                class="work-thumb"
+                autoplay
+                loop
+                muted
+                playsinline
+                preload="metadata"
+                width="720"
+                height="1280"
+                aria-label="Glia in your pocket"
+              >
+                <source src="/videos/glia-pocket.mp4" type="video/mp4" />
+              </video>
+              <p class="work-credit">
+                Glia in your pocket
+                <a
+                  href="https://www.instagram.com/reel/Dbp_KZus2Ic/"
+                  target="_blank"
+                  rel="noreferrer"
+                  >@gliahq</a
+                >
+              </p>
+            </div>
+          </div>
+          <p>
+            I write about memory, attention, and building the company on the
             <a href="/writing">Writing</a> page and at
             <a href="https://www.gliahq.com/blog" target="_blank" rel="noreferrer"
               >gliahq.com/blog</a
-            >, including
-            <a
-              href="https://gliahq.substack.com/p/memory-composer"
-              target="_blank"
-              rel="noreferrer"
-              >Memory Composer</a
             >.
           </p>
         </section>
 
-        <section class="project-methods">
+        <section class="project-methods" id="methods">
           <h2>Methods</h2>
           <p>
             Ethnographic research · Depth interviews · Prototyping · Interface
-            design · AI interaction design · Co-design
+            design · Ambient AI design · AI architecture · Memory architecture ·
+            Co-design
           </p>
         </section>
 
         <p class="project-links">
-          Live product:
-          <a href="https://www.gliahq.com" target="_blank" rel="noreferrer"
-            >gliahq.com</a
-          ><br />
           App Store:
           <a
             href="https://apps.apple.com/us/app/glia-memory-composer/id6741760790"
@@ -186,13 +364,6 @@
           Personal shoeboxes:
           <a href="https://www.gliahq.com/erica" target="_blank" rel="noreferrer"
             >gliahq.com/erica</a
-          ><br />
-          Essay:
-          <a
-            href="https://gliahq.substack.com/p/memory-composer"
-            target="_blank"
-            rel="noreferrer"
-            >Memory Composer</a
           ><br />
           Press:
           <a
