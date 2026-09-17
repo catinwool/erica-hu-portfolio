@@ -1458,6 +1458,10 @@ iframe.work-thumb {
   transform: rotate(2.2deg);
 }
 
+.fun-card--b .fun-media-link:first-child .work-thumb {
+  aspect-ratio: 1 / 1;
+}
+
 .fun-media {
   display: flex;
   align-items: flex-start;
