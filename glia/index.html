@@ -15,7 +15,7 @@
       href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..720;1,7..72,200..720&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260917c" />
+    <link rel="stylesheet" href="/styles.css?v=20261002l" />
   </head>
   <body>
     <div class="site">
@@ -81,14 +81,29 @@
             <h2>The belief</h2>
             <p>
               Memory has always been about stories and keepsakes: dried flowers, a
-              boarding pass, a grandmother’s recipe written down by hand. Most
-              software treats memory as content to scroll past.
+              boarding pass, a grandmother’s recipe written down by hand. We have
+              always known how to remember a life as a shoebox. Most software
+              turns that into an inbox: life scattered across platforms, saved
+              without end, and shown to people far outside the ones you actually
+              know.
             </p>
             <blockquote class="project-insight">
               How do you design technology that helps people remember, relive, and
               reflect with the people they care about, without turning intimacy
               into a feed?
             </blockquote>
+            <p>
+              The idea surfaced in Shanghai in summer 2024, during a visit to my
+              aunt’s. The name comes from glial cells, the connective tissue of
+              the brain that holds everything together without taking the credit.
+            </p>
+            <p>
+              An earlier exploration,
+              <a href="/buttercup">Buttercup</a>, was framed around learning. In
+              research, people kept recording conversations with family so they
+              could understand each other better through what they remembered
+              together. That thread is what Glia grew from.
+            </p>
           </section>
 
           <div class="project-film project-film--portrait">
@@ -117,30 +132,97 @@
           </div>
         </div>
 
-        <div class="project-duo">
-          <p>
-            The idea surfaced in Shanghai in summer 2024, during a visit to my
-            aunt’s. The name comes from glial cells, the connective tissue of
-            the brain that holds everything together without taking the credit.
-          </p>
-          <p>
-            An earlier exploration,
-            <a href="/buttercup">Buttercup</a>, was framed around learning. In
-            research, people kept recording conversations with family so they
-            could understand each other better through what they remembered
-            together. That thread is what Glia grew from.
-          </p>
-        </div>
+        <div class="walkthrough">
+          <div class="walkthrough-row">
+            <div class="walkthrough-blobs" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="project-film">
+              <video
+                class="work-thumb"
+                controls
+                muted
+                loop
+                playsinline
+                preload="metadata"
+                width="1180"
+                height="2556"
+                aria-label="Ambient collector: keepsakes gathered from the apps you already use"
+              >
+                <source src="/videos/glia-collector.mp4" type="video/mp4" />
+              </video>
+            </div>
+            <div class="walkthrough-copy">
+              <h3>Ambient collector</h3>
+              <p>
+                Glia sits in the corners of the internet you already use.
+                Films, quotes, music, runs, and books come in as keepsakes.
+              </p>
+            </div>
+          </div>
 
-        <section>
-          <h2>What I designed</h2>
-          <p>
-            The product is organized around people, place, and stories. You
-            curate shoeboxes of keepsakes, small on purpose, and give them to
-            someone. Conversations and stray thoughts become artifacts: a dinner
-            that tasted like home, a walk after rain.
-          </p>
-        </section>
+          <div class="walkthrough-row walkthrough-row--flip">
+            <div class="walkthrough-blobs" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="project-film">
+              <video
+                class="work-thumb"
+                controls
+                muted
+                loop
+                playsinline
+                preload="metadata"
+                width="1180"
+                height="2556"
+                aria-label="Personal curator: a box made from what carries sentimental value"
+              >
+                <source src="/videos/glia-curator.mp4" type="video/mp4" />
+              </video>
+            </div>
+            <div class="walkthrough-copy">
+              <h3>Personal curator</h3>
+              <p>
+                It learns what carries sentimental value and keeps only what
+                matters. The box stays small on purpose.
+              </p>
+            </div>
+          </div>
+
+          <div class="walkthrough-row">
+            <div class="walkthrough-blobs" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="project-film">
+              <video
+                class="work-thumb"
+                controls
+                muted
+                loop
+                playsinline
+                preload="metadata"
+                width="1180"
+                height="2556"
+                aria-label="Remember together: give a memory box to someone you care about"
+              >
+                <source src="/videos/glia-together.mp4" type="video/mp4" />
+              </video>
+            </div>
+            <div class="walkthrough-copy">
+              <h3>Remember together</h3>
+              <p>
+                A box is something you give. Memory is for the people it
+                belongs to.
+              </p>
+            </div>
+          </div>
+        </div>
 
         <figure class="project-figure">
           <img
@@ -268,5 +350,51 @@
         </p>
       </main>
     </div>
+    <script>
+      (function () {
+        var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        var rows = document.querySelectorAll(".walkthrough-row");
+
+        if (!reduce && rows.length && "IntersectionObserver" in window) {
+          var rowObserver = new IntersectionObserver(
+            function (entries) {
+              entries.forEach(function (entry) {
+                entry.target.classList.toggle(
+                  "is-inview",
+                  entry.isIntersecting && entry.intersectionRatio >= 0.28
+                );
+              });
+            },
+            { threshold: [0, 0.28, 0.5] }
+          );
+          rows.forEach(function (row) {
+            rowObserver.observe(row);
+          });
+        }
+
+        var videos = document.querySelectorAll(".walkthrough video");
+        if (!videos.length || reduce) return;
+
+        var observer = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (entry) {
+              var video = entry.target;
+              if (entry.intersectionRatio >= 0.99) {
+                var play = video.play();
+                if (play && play.catch) play.catch(function () {});
+              } else {
+                video.pause();
+              }
+            });
+          },
+          { threshold: [0, 0.99, 1] }
+        );
+
+        videos.forEach(function (video) {
+          video.muted = true;
+          observer.observe(video);
+        });
+      })();
+    </script>
   </body>
 </html>
