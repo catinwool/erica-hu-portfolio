@@ -158,14 +158,14 @@ a:focus-visible {
   width: 100%;
   max-width: 92rem;
   margin: 0 auto;
-  padding: 1.15rem clamp(2.1rem, 7.5vw, 6rem) 5.5rem;
+  padding: 1.15rem clamp(3rem, 10.5vw, 9rem) 5.5rem;
 }
 
 .project-back {
   width: 100%;
   max-width: 92rem;
   margin: 0 auto;
-  padding: 1.1rem clamp(2.1rem, 7.5vw, 6rem) 0;
+  padding: 1.1rem clamp(3rem, 10.5vw, 9rem) 0;
   font-size: 1.15rem;
   font-style: normal;
   color: var(--ink-soft);
@@ -293,6 +293,10 @@ a:focus-visible {
 .project-split .project-film--portrait .work-thumb,
 .project-split .project-film--inline.project-film--portrait .work-thumb {
   width: 100%;
+}
+
+.project-split--summary {
+  align-items: center;
 }
 
 .walkthrough {
@@ -834,6 +838,31 @@ a:focus-visible {
   font-size: inherit;
   font-style: inherit;
   line-height: inherit;
+}
+
+.project .project-split--summary h2 {
+  margin-bottom: 1.15rem;
+  max-width: none;
+  font-size: clamp(1.7rem, 2.4vw, 2.15rem);
+  font-weight: 480;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.project .project-split--summary p {
+  font-size: clamp(1.22rem, 1.45vw, 1.4rem);
+  line-height: 1.5;
+  margin-bottom: 1.2rem;
+}
+
+.project .project-split--summary .project-insight {
+  margin: 1.45rem 0 1.55rem;
+  max-width: none;
+  padding-left: 1.15rem;
+  font-size: clamp(1.4rem, 1.85vw, 1.65rem);
+  font-weight: 450;
+  letter-spacing: -0.02em;
+  line-height: 1.4;
 }
 
 .project em {
@@ -1794,15 +1823,44 @@ iframe.work-thumb {
 }
 
 .fun-card--g {
-  width: min(100%, 26rem);
+  width: min(100%, 28rem);
   margin-left: 55%;
+}
+
+.fun-card--g .fun-media {
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.fun-card--g .fun-media .work-thumb {
+  flex: 1 1 100%;
+  width: 100%;
+  max-width: none;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+
+.fun-card--g .fun-media .work-thumb:nth-child(n + 2) {
+  flex: 1 1 calc(50% - 0.275rem);
+  max-width: calc(50% - 0.275rem);
 }
 
 .fun-card--g .fun-postit {
   background: #f3e4c4;
-  bottom: -4rem;
-  left: -3.7rem;
+  height: auto;
+  min-height: 11.5rem;
+  aspect-ratio: auto;
+  bottom: -6.25rem;
+  left: -2.4rem;
   transform: rotate(-2deg);
+}
+
+.fun-tate-logo {
+  width: 4.6rem;
+  height: auto;
+  margin: 0 0 0.45rem;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .fun-card--h {
@@ -1929,12 +1987,22 @@ iframe.work-thumb {
 .fun-card--k .fun-postit {
   background: #dce8ff;
   width: 11.5rem;
-  height: 11.5rem;
+  height: auto;
+  min-height: 11.5rem;
+  aspect-ratio: auto;
   bottom: auto;
   top: 6.5rem;
   left: auto;
   right: -3.4rem;
   transform: rotate(2.8deg);
+}
+
+.fun-claude-logo {
+  width: 1.7rem;
+  height: auto;
+  margin: 0 0 0.4rem;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .fun-card--podcast .fun-stage::after {
@@ -2288,6 +2356,18 @@ iframe.work-thumb {
     width: min(14rem, 100%);
     height: auto;
     min-height: 10.5rem;
+  }
+
+  .fun-card--g .fun-media .work-thumb:nth-child(n + 2) {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+
+  .fun-card--g .fun-postit {
+    width: 10.5rem;
+    height: auto;
+    bottom: -3.2rem;
+    left: -0.25rem;
   }
 
   .fun-card--h .fun-postit {
