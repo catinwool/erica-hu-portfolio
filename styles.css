@@ -1832,6 +1832,15 @@ iframe.work-thumb {
   gap: 0.55rem;
 }
 
+.fun-card--g .fun-tate-lead {
+  display: flex;
+  align-items: stretch;
+  gap: 0.55rem;
+  flex: 1 1 100%;
+  width: 100%;
+  max-width: 100%;
+}
+
 .fun-card--g .fun-media .work-thumb {
   flex: 1 1 100%;
   width: 100%;
@@ -1843,6 +1852,32 @@ iframe.work-thumb {
 .fun-card--g .fun-media .work-thumb:nth-child(n + 2) {
   flex: 1 1 calc(50% - 0.275rem);
   max-width: calc(50% - 0.275rem);
+}
+
+.fun-card--g .fun-media .fun-poster {
+  flex: 0 0 38%;
+  width: 38%;
+  max-width: 38%;
+  aspect-ratio: 9 / 16;
+  height: auto;
+  object-fit: cover;
+}
+
+.fun-card--g .fun-media .fun-tate-fill {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.fun-card--g .fun-media .fun-tate-fill .work-thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  aspect-ratio: auto;
+  object-fit: cover;
+  object-position: center;
 }
 
 .fun-card--g .fun-postit {
@@ -2356,6 +2391,33 @@ iframe.work-thumb {
     width: min(14rem, 100%);
     height: auto;
     min-height: 10.5rem;
+  }
+
+  .fun-card--g .fun-tate-lead {
+    flex-direction: column;
+  }
+
+  .fun-card--g .fun-media .fun-poster,
+  .fun-card--g .fun-media .fun-tate-fill,
+  .fun-card--g .fun-media .fun-tate-fill .work-thumb {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .fun-card--g .fun-media .fun-poster {
+    aspect-ratio: 9 / 16;
+  }
+
+  .fun-card--g .fun-media .fun-tate-fill {
+    position: static;
+  }
+
+  .fun-card--g .fun-media .fun-tate-fill .work-thumb {
+    position: static;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
   }
 
   .fun-card--g .fun-media .work-thumb:nth-child(n + 2) {
