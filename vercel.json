@@ -1,3 +1,39 @@
 {
-  "cleanUrls": true
+  "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/casa",
+      "missing": [
+        {
+          "type": "host",
+          "value": "casa.erica-hu.com"
+        }
+      ],
+      "destination": "https://casa.erica-hu.com",
+      "permanent": false
+    },
+    {
+      "source": "/casa/:path*",
+      "missing": [
+        {
+          "type": "host",
+          "value": "casa.erica-hu.com"
+        }
+      ],
+      "destination": "https://casa.erica-hu.com",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "casa.erica-hu.com"
+        }
+      ],
+      "destination": "/casa"
+    }
+  ]
 }

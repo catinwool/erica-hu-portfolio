@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>casa</title>
+    <meta
+      name="description"
+      content="A small house at casa.erica-hu.com. Click what you would touch."
+    />
+    <meta name="theme-color" content="#241c28" />
+    <meta property="og:title" content="casa" />
+    <meta
+      property="og:description"
+      content="A small house. Click what you would touch."
+    />
+    <meta property="og:url" content="https://casa.erica-hu.com" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23241c28'/%3E%3Cpath d='M5 16 L16 7 L27 16 V26 H5Z' fill='%23f6efe6'/%3E%3Cpath d='M13 26 V19 H19 V26' fill='%238f3b28'/%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..720;1,7..72,200..720&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        color: var(--ink);
+        font-family: "Literata", Georgia, "Palatino Linotype", Palatino, serif;
+        font-optical-sizing: auto;
+      }
+
+      body[data-sky="dusk"] {
+        --ink: #f6efe6;
+        color-scheme: dark;
+        background:
+          radial-gradient(ellipse 80% 48% at 50% -8%, #534864 0%, transparent 58%),
+          radial-gradient(ellipse 74% 42% at 50% 112%, rgba(143, 59, 40, 0.5), transparent 52%),
+          #241c28;
+      }
+
+      body[data-sky="day"] {
+        --ink: #241c14;
+        color-scheme: light;
+        background:
+          radial-gradient(ellipse 90% 50% at 50% 100%, rgba(255, 255, 255, 0.55), transparent 46%),
+          linear-gradient(#eef3f8, #c5d4e4);
+      }
+
+      body[data-sky="night"] {
+        --ink: #f4efe6;
+        color-scheme: dark;
+        background:
+          radial-gradient(ellipse 70% 36% at 50% 0%, #1c2748 0%, transparent 62%),
+          #090b12;
+      }
+
+      ::selection {
+        background: #e6c9a8;
+        color: #241c14;
+      }
+
+      .wrap {
+        width: min(860px, 100%);
+        min-height: 100dvh;
+        margin: 0 auto;
+        padding: clamp(1rem, 3vw, 1.75rem) 1rem 1.4rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.65rem;
+      }
+
+      main {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      header,
+      footer {
+        text-align: center;
+      }
+
+      h1 {
+        margin: 0;
+        font-weight: 500;
+        font-style: italic;
+        font-size: clamp(2.7rem, 8vw, 4.4rem);
+        letter-spacing: -0.045em;
+        line-height: 0.85;
+      }
+
+      .hint,
+      .sr {
+        margin: 0.4rem 0 0;
+        font-size: 1.02rem;
+        opacity: 0.72;
+      }
+
+      .sr {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      .house {
+        width: 100%;
+        height: auto;
+        display: block;
+        overflow: visible;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+        filter: drop-shadow(0 22px 28px rgba(0, 0, 0, 0.28));
+      }
+
+      .hit {
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .hit:focus {
+        outline: none;
+      }
+
+      .ring {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .hit:focus-visible .ring {
+        opacity: 1;
+      }
+
+      .stars,
+      .moon {
+        opacity: 0;
+        transition: opacity 0.6s ease;
+        pointer-events: none;
+      }
+
+      .house[data-sky="night"] .stars,
+      .house[data-sky="night"] .moon {
+        opacity: 1;
+      }
+
+      .house[data-sky="dusk"] .moon {
+        opacity: 0.8;
+      }
+
+      .lamp-glow {
+        opacity: 0.5;
+        transition: opacity 0.45s ease;
+        pointer-events: none;
+      }
+
+      .house[data-sky="night"][data-lamp="on"] .lamp-glow {
+        opacity: 0.85;
+      }
+
+      .house[data-lamp="off"] .lamp-glow {
+        opacity: 0;
+      }
+
+      .house[data-lamp="off"] .shade {
+        fill: #cbb98a;
+      }
+
+      .house[data-lamp="off"] .bulb {
+        fill: #cfc6b8;
+      }
+
+      .study-shade {
+        fill: #14110e;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+        pointer-events: none;
+      }
+
+      .house[data-lamp="off"] .study-shade {
+        opacity: 0.7;
+      }
+
+      .book {
+        transition: transform 0.28s ease;
+      }
+
+      .house[data-book="0"] .book-0,
+      .house[data-book="1"] .book-1,
+      .house[data-book="2"] .book-2 {
+        transform: translateY(-14px);
+      }
+
+      .cat {
+        transition: transform 0.7s cubic-bezier(0.18, 0.85, 0.2, 1);
+      }
+
+      .house[data-cat="sill"] .cat {
+        transform: translate(108px, -46px);
+      }
+
+      .tail {
+        transform-box: fill-box;
+        transform-origin: 0% 80%;
+        animation: wag 2.8s ease-in-out infinite;
+      }
+
+      .leaf {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: sway 3.6s ease-in-out infinite;
+      }
+
+      .leaf-top {
+        animation-delay: -1.1s;
+      }
+
+      .flower {
+        opacity: 0;
+        transform: scale(0.4);
+        transform-box: fill-box;
+        transform-origin: center;
+        transition: opacity 0.35s ease, transform 0.35s ease;
+      }
+
+      .house.is-bloom .flower {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      .steam,
+      .chimney-smoke {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .house.is-boiling .steam,
+      .house.is-boiling .chimney-smoke {
+        animation: puff 1.6s ease-out infinite;
+      }
+
+      .steam-2,
+      .smoke-2 {
+        animation-delay: 0.35s;
+      }
+
+      .steam-3,
+      .smoke-3 {
+        animation-delay: 0.7s;
+      }
+
+      .house.is-boiling .kettle-body {
+        fill: #eef3f8;
+      }
+
+      .dial {
+        transform-box: fill-box;
+        transform-origin: center;
+        transition: transform 0.35s ease;
+      }
+
+      .house[data-station="off"] .dial {
+        transform: rotate(-68deg);
+      }
+
+      .house[data-station="0"] .dial {
+        transform: rotate(-42deg);
+      }
+
+      .house[data-station="1"] .dial {
+        transform: rotate(-8deg);
+      }
+
+      .house[data-station="2"] .dial {
+        transform: rotate(24deg);
+      }
+
+      .house[data-station="3"] .dial {
+        transform: rotate(56deg);
+      }
+
+      .house.is-playing .speaker {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: pulse 0.7s ease;
+      }
+
+      .door-void {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .house.is-open .door-void {
+        opacity: 1;
+      }
+
+      .door-panel {
+        transition: transform 0.45s ease;
+      }
+
+      .house.is-open .door-panel {
+        transform: translate(26px, 0);
+      }
+
+      .photo-front,
+      .photo-back {
+        transition: opacity 0.3s ease;
+      }
+
+      .photo-back {
+        opacity: 0;
+      }
+
+      .house[data-photo="back"] .photo-front {
+        opacity: 0;
+      }
+
+      .house[data-photo="back"] .photo-back {
+        opacity: 1;
+      }
+
+      .photo-back text,
+      .mat-word {
+        font-family: "Literata", Georgia, serif;
+        font-style: italic;
+      }
+
+      .caption {
+        margin: 0.15rem 0 0;
+        max-width: 26rem;
+        min-height: 4.5rem;
+        text-align: center;
+        text-wrap: balance;
+        font-style: italic;
+        font-size: clamp(1.14rem, 2.5vw, 1.38rem);
+        line-height: 1.35;
+        transition: opacity 0.16s ease;
+      }
+
+      .caption.is-out {
+        opacity: 0;
+      }
+
+      footer {
+        margin-top: 0.15rem;
+        font-size: 0.98rem;
+      }
+
+      footer a {
+        color: inherit;
+        opacity: 0.62;
+        text-underline-offset: 0.22em;
+      }
+
+      footer a:hover {
+        opacity: 1;
+        color: #e7b15a;
+      }
+
+      body[data-sky="day"] footer a:hover {
+        color: #8f3b28;
+      }
+
+      a:focus-visible {
+        outline: 2px solid #e7b15a;
+        outline-offset: 4px;
+      }
+
+      @keyframes sway {
+        0%,
+        100% {
+          transform: rotate(0deg);
+        }
+        50% {
+          transform: rotate(6deg);
+        }
+      }
+
+      @keyframes wag {
+        0%,
+        100% {
+          transform: rotate(0deg);
+        }
+        50% {
+          transform: rotate(8deg);
+        }
+      }
+
+      @keyframes puff {
+        0% {
+          transform: translateY(0);
+          opacity: 0;
+        }
+        25% {
+          opacity: 0.75;
+        }
+        100% {
+          transform: translateY(-28px);
+          opacity: 0;
+        }
+      }
+
+      @keyframes pulse {
+        50% {
+          transform: scale(1.08);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .leaf,
+        .tail,
+        .steam,
+        .chimney-smoke,
+        .speaker {
+          animation: none;
+        }
+
+        .cat,
+        .dial,
+        .book,
+        .door-panel,
+        .flower,
+        .caption,
+        body {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body data-sky="dusk">
+    <div class="wrap">
+      <header>
+        <h1>casa</h1>
+        <p class="hint" id="hint">Click what you would touch.</p>
+        <p class="sr">
+          A cutaway house. Open the door, boil the kettle, tune the radio, turn the lamp, read the shelf, and move the cat.
+        </p>
+      </header>
+
+      <main>
+        <svg
+          class="house"
+          data-sky="dusk"
+          data-lamp="on"
+          data-station="off"
+          data-cat="bed"
+          data-photo="front"
+          viewBox="0 0 840 640"
+          role="group"
+          aria-label="Cutaway of a house"
+        >
+          <defs>
+            <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+              <stop id="skyA" offset="0%" stop-color="#f0b48a" />
+              <stop id="skyB" offset="100%" stop-color="#6a4d86" />
+            </linearGradient>
+            <pattern id="plank" width="18" height="32" patternUnits="userSpaceOnUse">
+              <rect width="18" height="32" fill="#e0b67a" />
+              <rect x="17" width="1" height="32" fill="#c79655" />
+            </pattern>
+            <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ffd98a" stop-opacity="0.9" />
+              <stop offset="70%" stop-color="#ffd98a" stop-opacity="0.25" />
+              <stop offset="100%" stop-color="#ffd98a" stop-opacity="0" />
+            </radialGradient>
+          </defs>
+
+          <ellipse cx="420" cy="620" rx="290" ry="14" fill="rgba(12, 8, 6, 0.22)" />
+
+          <rect class="shell" x="84" y="164" width="664" height="404" fill="#5a382f" />
+          <polygon points="40,178 420,40 800,178" fill="#8f3b28" />
+          <polygon points="40,178 420,40 420,178" fill="#000" opacity="0.1" />
+
+          <g aria-hidden="true">
+            <rect x="598" y="64" width="38" height="86" fill="#6a3830" stroke="#241c14" stroke-width="3" />
+            <rect x="590" y="54" width="54" height="14" fill="#7a4036" stroke="#241c14" stroke-width="3" />
+            <ellipse class="chimney-smoke smoke-1" cx="616" cy="42" rx="7" ry="4" fill="#f6efe6" />
+            <ellipse class="chimney-smoke smoke-2" cx="628" cy="28" rx="9" ry="5" fill="#f6efe6" />
+            <ellipse class="chimney-smoke smoke-3" cx="608" cy="16" rx="6" ry="3.5" fill="#f6efe6" />
+          </g>
+
+          <rect x="100" y="180" width="308" height="170" fill="#f4eadc" />
+          <rect x="424" y="180" width="308" height="170" fill="#f6e9f3" />
+          <rect x="100" y="366" width="308" height="186" fill="#fbf6ef" />
+          <rect x="424" y="366" width="308" height="186" fill="#e7f0e6" />
+
+          <rect x="100" y="318" width="308" height="32" fill="url(#plank)" />
+          <rect x="424" y="318" width="308" height="32" fill="url(#plank)" />
+          <rect x="100" y="520" width="308" height="32" fill="url(#plank)" />
+          <rect x="424" y="520" width="308" height="32" fill="url(#plank)" />
+
+          <ellipse class="lamp-glow" cx="360" cy="270" rx="130" ry="90" fill="url(#glow)" />
+
+          <g class="hit" role="button" tabindex="0" data-id="window" aria-label="Study window">
+            <g aria-hidden="true">
+              <rect class="pad" x="108" y="188" width="146" height="108" fill="transparent" />
+              <rect x="116" y="196" width="130" height="90" rx="2" fill="#241c14" />
+              <rect x="124" y="204" width="54" height="34" fill="url(#sky)" />
+              <rect x="182" y="204" width="56" height="34" fill="url(#sky)" />
+              <rect x="124" y="242" width="54" height="36" fill="url(#sky)" />
+              <rect x="182" y="242" width="56" height="36" fill="url(#sky)" />
+              <g class="stars" fill="#fff8e6">
+                <circle cx="140" cy="216" r="1.4" />
+                <circle cx="166" cy="226" r="1" />
+                <circle cx="198" cy="214" r="1.3" />
+                <circle cx="206" cy="256" r="1" />
+                <circle cx="148" cy="260" r="1.2" />
+              </g>
+              <rect class="ring" x="110" y="190" width="142" height="104" rx="4" fill="none" stroke="#e7b15a" stroke-width="3" />
+            </g>
+          </g>
+
+          <rect x="116" y="296" width="270" height="22" rx="2" fill="#a67c52" stroke="#241c14" stroke-width="3" />
+
+          <g class="hit" role="button" tabindex="0" data-id="books" aria-label="Bookshelf">
+            <g aria-hidden="true">
+              <rect class="pad" x="250" y="224" width="110" height="78" fill="transparent" />
+              <g class="book book-0">
+                <rect x="256" y="250" width="24" height="46" fill="#8f3b28" stroke="#241c14" stroke-width="2" />
+              </g>
+              <g class="book book-1">
+                <rect x="284" y="238" width="22" height="58" fill="#241c14" stroke="#3a3128" stroke-width="2" />
+                <rect x="288" y="248" width="3" height="36" fill="#e6c9a8" />
+              </g>
+              <g class="book book-2">
+                <rect x="310" y="246" width="26" height="50" fill="#cbb6dc" stroke="#241c14" stroke-width="2" />
+              </g>
+              <rect class="ring" x="250" y="230" width="96" height="72" rx="4" fill="none" stroke="#e7b15a" stroke-width="3" />
+            </g>
+          </g>
+
+          <g class="hit" role="button" tabindex="0" data-id="lamp" aria-label="Desk lamp" aria-pressed="true">
+            <g aria-hidden="true">
+              <rect class="pad" x="324" y="200" width="84" height="110" fill="transparent" />
+              <line x1="362" y1="248" x2="362" y2="300" stroke="#241c14" stroke-width="4" />
+              <ellipse cx="362" cy="304" rx="18" ry="6" fill="#6b3a2a" stroke="#241c14" stroke-width="3" />
+              <polygon class="shade" points="334,210 390,210 402,250 322,250" fill="#ffe3a3" stroke="#241c14" stroke-width="3" />
+              <circle class="bulb" cx="362" cy="244" r="5" fill="#fff6d0" stroke="#241c14" stroke-width="2" />
+              <rect class="ring" x="318" y="204" width="90" height="108" rx="6" fill="none" stroke="#e7b15a" stroke-width="3" />
+            </g>
+          </g>
+
+          <g class="hit" role="button" tabindex="0" data-id="window" aria-label="Bedroom window">
+            <g aria-hidden="true">
+              <rect class="pad" x="536" y="186" width="176" height="116" fill="transparent" />
+              <rect x="548" y="196" width="156" height="100" rx="2" fill="#241c14" />
+              <rect x="556" y="204" width="66" height="40" fill="url(#sky)" />
+              <rect x="626" y="204" width="70" height="40" fill="url(#sky)" />
+              <rect x="556" y="248" width="66" height="40" fill="url(#sky)" />
+              <rect x="626" y="248" width="70" height="40" fill="url(#sky)" />
+              <circle class="moon" cx="674" cy="224" r="11" fill="#f4e7c5" />
+              <g class="stars" fill="#fff8e6">
+                <circle cx="574" cy="218" r="1.3" />
+                <circle cx="600" cy="232" r="1" />
+                <circle cx="640" cy="214" r="1.2" />
+                <circle cx="652" cy="262" r="1" />
+                <circle cx="590" cy="268" r="1.3" />
+              </g>
+              <rect class="ring" x="542" y="190" width="168" height="112" rx="4" fill="none" stroke="#e7b15a" stroke-width="3" />
+            </g>
+          </g>
+
+          <g aria-hidden="true">
+            <rect x="446" y="304" width="176" height="40" rx="6" fill="#f7f4ef" stroke="#241c14" stroke-width="3" />
+            <rect x="446" y="322" width="176" height="26" fill="#ddc6e8" stroke="#241c14" stroke-width="3" />
+            <rect x="456" y="308" width="42" height="22" rx="4" fill="#fffaf4" stroke="#241c14" stroke-width="2" />
+          </g>
+
+          <g class="hit cat" role="button" tabindex="0" data-id="cat" aria-label="Cat">
+            <g aria-hidden="true">
+              <rect class="pad" x="478" y="256" width="150" height="86" fill="transparent" />
+              <path class="tail" d="M588 316 Q628 338 636 308" fill="none" stroke="#2c2622" stroke-width="7" stroke-linecap="round" />
+              <ellipse cx="548" cy="318" rx="46" ry="22" fill="#2c2622" />
+              <circle cx="508" cy="298" r="20" fill="#2c2622" />
+              <polygon points="492,286 500,266 510,286" fill="#2c2622" />
+              <polygon points="512,284 522,264 530,286" fill="#2c2622" />
+              <polygon points="496,282 502,270 508,282" fill="#e7b6b0" />
+              <polygon points="516,280 522,268 528,282" fill="#e7b6b0" />
+              <circle cx="502" cy="296" r="2.2" fill="#f6efe6" />
+              <circle cx="516" cy="296" r="2.2" fill="#f6efe6" />
+              <circle cx="509" cy="304" r="2.4" fill="#e7a0a8" />
+              <rect class="ring" x="484" y="258" width="150" height="86" rx="12" fill="none" stroke="#e7b15a" stroke-width="3" />
+            </g>
+          </g>
+
+          <g class="hit" role="button" tabindex="0" data-id="window" aria-label="Kitchen window">
+            <g aria-hidden="true">
+              <rect class="pad" x="108" y="374" width="148" height="116" fill="transparent" />
+              <rect x="116" y="382" width="132" height="100" rx="2" fill="#241c14" />
+              <rect x="124" y="390" width="54" height="38" fill="url(#sky)" />
+              <rect x="182" y="390" width="58" height="38" fill="url(#sky)" />
+              <rect x="124" y="432" width="54" height="42" fill="url(#sky)" />
+              <rect x="182" y="432" width="58" height="42" fill="url(#sky)" />
+              <g class="stars" fill="#fff8e6">
+                <circle cx="140" cy="404" r="1.3" />
+                <circle cx="168" cy="414" r="1" />
+                <circle cx="200" cy="402" r="1.2" />
+                <circle cx="210" cy="448" r="1" />
+                <circle cx="146" cy="454" r="1.2" />
+              </g>
+              <rect class="ring" x="110" y="376" width="144" height="112" rx="4" fill="none" stroke="#e7b15a" stroke-width="3" />
+            </g>
+          </g>
+
+          <rect x="116" y="496" width="250" height="24" rx="2" fill="#c9956a" stroke="#241c14" stroke-width="3" />
+
+          <g class="hit" role="button" tabindex="0" data-id="plant" aria-label="Plant">
+            <g aria-hidden="true">
+              <rect class="pad" x="128" y="430" width="96" height="100" fill="transparent" />
+              <line x1="176" y1="470" x2="176" y2="508" stroke="#2f6b3a" stroke-width="3" />
+              <g transform="rotate(-34 154 468)">
+                <ellipse class="leaf" cx="154" cy="468" rx="24" ry="12" fill="#3f7a48" stroke="#241c14" stroke-width="2" />
+              </g>
+              <g transform="rotate(32 200 466)">
+                <ellipse class="leaf" cx="200" cy="466" rx="24" ry="12" fill="#2f6b3a" stroke="#241c14" stroke-width="2" />
+              </g>
+              <ellipse class="leaf leaf-top" cx="176" cy="452" rx="14" ry="10" fill="#4e8d58" stroke="#241c14" stroke-width="2" />
+              <circle class="flower" cx="176" cy="438" r="9" fill="#e07a8a" stroke="#241c14" stroke-width="2" />
+              <circle class="flower" cx="176" cy="438" r="3" fill="#f6efe6" />
+              <polygon points="156,508 198,508 190,534 164,534" fill="#c46b4a" stroke="#241c14" stroke-width="3" />
+              <rect x="152" y="500" width="50" height="12" rx="2" fill="#a6533a" stroke="#241c14" stroke-width="3" />
+              <rect class="ring" x="136" y="426" width="84" height="116" rx="8" fill="none" stroke="#e7b15a" stroke-width="3" />
+            </g>
+          </g>
+
+          <g class="hit" role="button" tabindex="0" data-id="kettle" aria-label="Kettle">
+            <g aria-hidden="true">
+              <rect class="pad" x="248" y="440" width="120" height="80" fill="transparent" />
+              <circle class="steam steam-1" cx="332" cy="458" r="4" fill="#fff" />
+              <circle class="steam steam-2" cx="344" cy="448" r="3.2" fill="#fff" />
+              <circle class="steam steam-3" cx="324" cy="444" r="3.5" fill="#fff" />
+              <path d="M268 486 Q246 486 248 506" fill="none" stroke="#241c14" stroke-width="4" />
+              <rect class="kettle-body" x="262" y="468" width="62" height="40" rx="14" fill="#d5dbe3" stroke="#241c14" stroke-width="3" />
+              <polygon points="324,478 346,470 346,494 324,490" fill="#d5dbe3" stroke="#241c14" stroke-width="3" />
+              <rect x="274" y="460" width="36" height="10" rx="3" fill="#eef2f6" stroke="#241c14" stroke-width="3" />
+              <rect class="ring" x="242" y="448" width="112" height="70" rx="8" fill="none" stroke="#e7b15a" stroke-width="3" />
+            </g>
+          </g>
+
+          <ellipse cx="600" cy="540" rx="86" ry="15" fill="#e4d4ef" stroke="#241c14" stroke-width="3" />
+
+          <g aria-hidden="true">
+            <rect x="500" y="492" width="78" height="16" rx="6" fill="#8f3b28" stroke="#241c14" stroke-width="3" />
+            <rect x="508" y="464" width="62" height="34" rx="10" fill="#a6533a" stroke="#241c14" stroke-width="3" />
+            <line x1="512" y1="508" x2="508" y2="530" stroke="#241c14" stroke-width="3" />
+            <line x1="566" y1="508" x2="570" y2="530" stroke="#241c14" stroke-width="3" />
+          </g>
+
+          <g class="hit" role="button" tabindex="0" data-id="radio" aria-label="Radio">
+            <g aria-hidden="true">
+              <rect class="pad" x="590" y="430" width="150" height="100" fill="transparent" />
+              <line x1="700" y1="448" x2="724" y2="424" stroke="#241c14" stroke-width="3" />
+              <circle cx="724" cy="422" r="4" fill="#e07a8a" />
+              <rect x="598" y="448" width="132" height="74" rx="10" fill="#243044" stroke="#241c14" stroke-width="3" />
+              <circle class="speaker" cx="632" cy="486" r="20" fill="#1a2433" stroke="#8aa0b8" stroke-width="2" />
+              <circle cx="632" cy="486" r="8" fill="#121820" />
+              <circle class="speaker" cx="674" cy="486" r="12" fill="#1a2433" stroke="#8aa0b8" stroke-width="2" />
+              <g class="dial">
+                <circle cx="706" cy="478" r="15" fill="#f3ead7" stroke="#241c14" stroke-width="3" />
+                <line x1="706" y1="478" x2="706" y2="466" stroke="#8f3b28" stroke-width="3" stroke-linecap="round" />
+              </g>
+              <rect class="ring" x="592" y="436" width="144" height="92" rx="10" fill="none" stroke="#e7b15a" stroke-width="3" />
+            </g>
+          </g>
+
+          <g class="hit" role="button" tabindex="0" data-id="photo" aria-label="Photograph">
+            <g aria-hidden="true">
+              <rect class="pad" x="456" y="376" width="100" height="112" fill="transparent" />
+              <g class="photo-front">
+                <rect x="468" y="384" width="78" height="96" rx="2" fill="#f7f1e6" stroke="#241c14" stroke-width="4" />
+                <rect x="476" y="392" width="62" height="62" fill="#e7b9a8" />
+                <rect x="476" y="430" width="62" height="24" fill="#f6efe6" />
+                <rect x="496" y="408" width="18" height="28" fill="#8f3b28" />
+                <circle cx="492" cy="418" r="6" fill="#f2d48a" />
+              </g>
+              <g class="photo-back">
+                <rect x="468" y="384" width="78" height="96" rx="2" fill="#f7f1e6" stroke="#241c14" stroke-width="4" />
+                <text x="507" y="436" text-anchor="middle" font-size="13" fill="#8a7364">14 May</text>
+              </g>
+              <rect class="ring" x="462" y="378" width="90" height="108" rx="4" fill="none" stroke="#e7b15a" stroke-width="3" />
+            </g>
+          </g>
+
+          <rect class="study-shade" x="100" y="180" width="308" height="170" />
+
+          <g class="hit door" role="button" tabindex="0" data-id="door" aria-label="Front door" aria-pressed="false">
+            <g aria-hidden="true">
+              <rect class="pad" x="368" y="424" width="120" height="150" fill="transparent" />
+              <rect class="door-void" x="384" y="436" width="30" height="132" fill="#1a120e" />
+              <g class="door-panel">
+                <rect x="384" y="424" width="80" height="144" rx="2" fill="#6e3a2e" stroke="#241c14" stroke-width="4" />
+                <rect x="396" y="438" width="56" height="70" rx="1" fill="#5c3026" stroke="#241c14" stroke-width="2" />
+                <circle cx="448" cy="506" r="5" fill="#e6c27a" stroke="#241c14" stroke-width="2" />
+              </g>
+              <rect class="ring" x="376" y="418" width="96" height="156" rx="4" fill="none" stroke="#e7b15a" stroke-width="3" />
+            </g>
+          </g>
+
+          <g aria-hidden="true">
+            <rect x="366" y="566" width="116" height="22" rx="3" fill="#e7d3b0" stroke="#241c14" stroke-width="3" />
+            <text class="mat-word" x="424" y="582" text-anchor="middle" font-size="14" fill="#6b3a2a">casa</text>
+          </g>
+        </svg>
+
+        <p class="caption" id="caption" aria-live="polite">
+          The lights are already on. Nobody is in a hurry.
+        </p>
+      </main>
+
+      <footer>
+        <a href="https://portfolio.erica-hu.com">Erica Hu</a>
+      </footer>
+    </div>
+
+    <script>
+      const house = document.querySelector(".house");
+      const caption = document.getElementById("caption");
+      const hint = document.getElementById("hint");
+      const theme = document.querySelector('meta[name="theme-color"]');
+      const lamp = house.querySelector('[data-id="lamp"]');
+      const door = house.querySelector('[data-id="door"]');
+
+      const PLACES = ["window", "lamp", "books", "plant", "kettle", "radio", "cat", "door", "photo"];
+      const STORE = "casa-touched";
+      const skies = ["dusk", "day", "night"];
+      const skyLine = {
+        day: "A clear bit of sky. Unusual, and welcome.",
+        night: "Enough stars to count, if you are patient.",
+        dusk: "The light goes pink for about nine minutes.",
+      };
+      const skyStop = {
+        dusk: ["#f0b48a", "#6a4d86"],
+        day: ["#e8eef5", "#9eb4c9"],
+        night: ["#1c2748", "#0c1020"],
+      };
+      const themeColor = { dusk: "#241c28", day: "#d5deea", night: "#090b12" };
+      const bookLines = [
+        "A novel with a train ticket still in it.",
+        "Field notes, mostly about other people's kitchens.",
+        "A dictionary, open to a word meant for later.",
+      ];
+      const stationLines = [
+        "A voice reading the shipping forecast, very far away.",
+        "A song you knew in another kitchen.",
+        "Static, then a laugh from the next room.",
+        "The radio hums, and says nothing in particular.",
+      ];
+
+      let skyAt = 0;
+      let bookAt = -1;
+      let station = -1;
+      let sayToken = 0;
+      let playToken = 0;
+      let audio = null;
+      let seen = new Set();
+
+      try {
+        seen = new Set(JSON.parse(localStorage.getItem(STORE) || "[]"));
+      } catch (_) {}
+
+      if (seen.size >= PLACES.length) {
+        hint.textContent = "That's the whole house. It will still be here.";
+      }
+
+      function say(text) {
+        const token = ++sayToken;
+        caption.classList.add("is-out");
+        window.setTimeout(() => {
+          if (token !== sayToken) return;
+          caption.textContent = text;
+          caption.classList.remove("is-out");
+        }, 140);
+      }
+
+      function setSky(id) {
+        house.dataset.sky = id;
+        document.body.dataset.sky = id;
+        const [a, b] = skyStop[id];
+        document.getElementById("skyA").setAttribute("stop-color", a);
+        document.getElementById("skyB").setAttribute("stop-color", b);
+        theme.setAttribute("content", themeColor[id]);
+      }
+
+      function remember(id) {
+        if (!PLACES.includes(id) || seen.has(id)) return;
+        seen.add(id);
+        try {
+          localStorage.setItem(STORE, JSON.stringify([...seen]));
+        } catch (_) {}
+        if (seen.size === PLACES.length) {
+          hint.textContent = "That's the whole house. It will still be here.";
+        }
+      }
+
+      function ac() {
+        if (!audio) audio = new AudioContext();
+        return audio;
+      }
+
+      function tone(ctx, freq, when, dur, type, gain) {
+        const t = ctx.currentTime + when;
+        const osc = ctx.createOscillator();
+        const amp = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t);
+        amp.gain.setValueAtTime(0.0001, t);
+        amp.gain.exponentialRampToValueAtTime(gain, t + 0.02);
+        amp.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        osc.connect(amp);
+        amp.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + dur + 0.05);
+      }
+
+      function burst(ctx) {
+        const length = Math.floor(ctx.sampleRate * 0.28);
+        const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < length; i += 1) {
+          data[i] = (Math.random() * 2 - 1) * (1 - i / length);
+        }
+        const src = ctx.createBufferSource();
+        const filter = ctx.createBiquadFilter();
+        const amp = ctx.createGain();
+        src.buffer = buffer;
+        filter.type = "highpass";
+        filter.frequency.value = 900;
+        amp.gain.value = 0.04;
+        src.connect(filter);
+        filter.connect(amp);
+        amp.connect(ctx.destination);
+        src.start();
+      }
+
+      function playStation(index) {
+        const start = () => {
+          const ctx = ac();
+          if (index === 0) {
+            tone(ctx, 196, 0, 0.7, "sine", 0.045);
+            tone(ctx, 246, 0.16, 0.7, "sine", 0.035);
+            tone(ctx, 164, 0.36, 0.8, "triangle", 0.03);
+          } else if (index === 1) {
+            tone(ctx, 262, 0, 0.28, "triangle", 0.04);
+            tone(ctx, 330, 0.22, 0.28, "triangle", 0.04);
+            tone(ctx, 392, 0.44, 0.4, "sine", 0.045);
+          } else if (index === 2) {
+            burst(ctx);
+            tone(ctx, 784, 0.26, 0.1, "sine", 0.04);
+            tone(ctx, 988, 0.38, 0.12, "sine", 0.035);
+          } else {
+            tone(ctx, 110, 0, 0.9, "sine", 0.03);
+          }
+        };
+        try {
+          const ctx = ac();
+          const token = ++playToken;
+          house.classList.add("is-playing");
+          window.setTimeout(() => {
+            if (token === playToken) house.classList.remove("is-playing");
+          }, 700);
+          if (ctx.state === "running") start();
+          else ctx.resume().then(start);
+        } catch (_) {}
+      }
+
+      function activate(id) {
+        remember(id);
+        if (id === "window") {
+          skyAt = (skyAt + 1) % skies.length;
+          const sky = skies[skyAt];
+          setSky(sky);
+          say(skyLine[sky]);
+          return;
+        }
+        if (id === "lamp") {
+          const lit = house.dataset.lamp !== "off";
+          house.dataset.lamp = lit ? "off" : "on";
+          lamp.setAttribute("aria-pressed", String(!lit));
+          say(lit ? "Darker. The street is still there." : "The lamp prefers to be the only light.");
+          return;
+        }
+        if (id === "books") {
+          bookAt = (bookAt + 1) % bookLines.length;
+          house.dataset.book = String(bookAt);
+          say(bookLines[bookAt]);
+          return;
+        }
+        if (id === "plant") {
+          const bloom = house.classList.toggle("is-bloom");
+          say(bloom ? "A flower, unprompted." : "It leans toward whichever window was open last.");
+          return;
+        }
+        if (id === "kettle") {
+          const hot = house.classList.toggle("is-boiling");
+          say(
+            hot
+              ? "Still warm. Someone left the kitchen a minute ago."
+              : "It clicks off. The counter remembers the heat."
+          );
+          return;
+        }
+        if (id === "radio") {
+          station = (station + 1) % stationLines.length;
+          house.dataset.station = String(station);
+          say(stationLines[station]);
+          playStation(station);
+          return;
+        }
+        if (id === "cat") {
+          const sill = house.dataset.cat !== "sill";
+          house.dataset.cat = sill ? "sill" : "bed";
+          say(sill ? "The cat has taken the windowsill." : "Back on the duvet. The moon can wait.");
+          return;
+        }
+        if (id === "door") {
+          const open = house.classList.toggle("is-open");
+          door.setAttribute("aria-pressed", String(open));
+          say(open ? "The door sticks a little. Come in. Shoes wherever." : "Closed, but not locked.");
+          return;
+        }
+        if (id === "photo") {
+          const back = house.dataset.photo !== "back";
+          house.dataset.photo = back ? "back" : "front";
+          say(
+            back
+              ? "On the back, a date and nothing else."
+              : "A photograph of a kitchen that is not this one."
+          );
+        }
+      }
+
+      house.addEventListener("click", (event) => {
+        const hit = event.target.closest(".hit");
+        if (!hit) return;
+        activate(hit.dataset.id);
+      });
+
+      house.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        const hit = event.target.closest(".hit");
+        if (!hit) return;
+        event.preventDefault();
+        activate(hit.dataset.id);
+      });
+    </script>
+  </body>
+</html>
