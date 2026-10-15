@@ -4,299 +4,1146 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>casa</title>
-    <meta name="description" content="A painted room. A couch, a board, a lamp, records, a desk, and a shelf." />
-    <meta name="theme-color" content="#ff7eb3" />
-    <meta property="og:title" content="casa" />
-    <meta property="og:description" content="A painted room." />
-    <meta property="og:url" content="https://casa.erica-hu.com" />
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%23ff7eb3'/%3E%3Cpath d='M6 8 H26 V24 H6Z' fill='%232b62e6'/%3E%3Cpath d='M16 8 V24 M6 16 H26' stroke='%23fffaf3' stroke-width='1.6'/%3E%3C/svg%3E"
+    <meta
+      name="description"
+      content="A painted room. A couch, a board, a lamp, records, a desk, a shelf, plants, and a ceiling light."
     />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,500;1,7..72,500&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <style>
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-      }
-
       html,
       body {
         margin: 0;
-        min-height: 100%;
+        height: 100%;
+        background: #f24a81;
+        overflow: hidden;
       }
 
-      body {
-        background: #f7f1e8;
-        color: #1a2744;
-        font-family: "Literata", Georgia, "Palatino Linotype", Palatino, serif;
+      .room {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        touch-action: none;
+        overscroll-behavior: none;
       }
 
-      main {
-        width: min(720px, 100%);
-        margin: 0 auto;
-        padding: clamp(0.8rem, 3vw, 1.6rem) clamp(0.8rem, 3vw, 1.6rem) 2.2rem;
+      .stage {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: max(100vw, calc(100vh * 16 / 9));
+        aspect-ratio: 16 / 9;
+        transform: translate(-50%, -50%);
       }
 
-      .sheet {
-        background: #fffaf6;
-        padding: clamp(0.55rem, 2vw, 0.9rem);
+      .bg,
+      .piece {
+        position: absolute;
+        user-select: none;
+        -webkit-user-drag: none;
       }
 
-      svg {
+      .bg {
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: fill;
+      }
+
+      .piece {
+        height: auto;
+        cursor: grab;
+        touch-action: none;
+      }
+
+      .piece.away {
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .piece.dragging {
+        z-index: 12;
+        cursor: grabbing;
+      }
+
+      #window {
+        z-index: 1;
+        left: 9.4%;
+        top: 9.4%;
+        width: 40%;
+      }
+
+      #rug {
+        z-index: 2;
+        left: -2.8%;
+        top: 77%;
+        width: 91.1%;
+      }
+
+      #garden {
+        z-index: 3;
+        left: 35.3%;
+        top: 76.7%;
+        width: 56%;
+      }
+
+      #board {
+        z-index: 3;
+        left: 56.5%;
+        top: 11%;
+        width: 20%;
+      }
+
+      #shelf {
+        z-index: 4;
+        left: 77.6%;
+        top: 23.1%;
+        width: 28%;
+      }
+
+      #vinyl {
+        z-index: 5;
+        left: 81.3%;
+        top: 74.3%;
+        width: 21%;
+      }
+
+      #desk {
+        z-index: 6;
+        left: 1.8%;
+        top: 55.3%;
+        width: 28%;
+      }
+
+      #glass {
+        z-index: 7;
+        left: 2.2%;
+        top: 45.4%;
+        width: 6.5%;
+      }
+
+      #notebook {
+        z-index: 7;
+        left: 11.4%;
+        top: 57.9%;
+        width: 9.5%;
+      }
+
+      #pen {
+        z-index: 7;
+        left: 14.6%;
+        top: 57.7%;
+        width: 4.2%;
+      }
+
+      #macbook {
+        z-index: 7;
+        left: 5.7%;
+        top: 53.2%;
+        width: 8.5%;
+      }
+
+      #lamp {
+        z-index: 8;
+        left: 36%;
+        top: 57%;
+        width: 12%;
+      }
+
+      #lamp .lamp-off,
+      #lamp .lamp-on {
         display: block;
         width: 100%;
         height: auto;
+        pointer-events: none;
       }
 
-      h1 {
-        margin: 0.15rem 0 0;
-        text-align: center;
-        font-weight: 500;
-        font-style: italic;
-        font-size: clamp(3.4rem, 12vw, 5.6rem);
-        letter-spacing: -0.045em;
-        line-height: 0.85;
+      #lamp .lamp-off {
+        position: relative;
+        z-index: 1;
       }
 
-      footer {
-        margin-top: 0.55rem;
-        text-align: center;
+      #lamp .lamp-on {
+        position: absolute;
+        left: 0;
+        top: 0;
+        z-index: 1;
+        opacity: 0;
+        transition: opacity 0.9s ease;
       }
 
-      footer a {
+      #lamp .lamp-glow {
+        position: absolute;
+        z-index: 0;
+        left: 50%;
+        top: 42%;
+        width: 520%;
+        height: 460%;
+        transform: translate(-50%, -36%);
+        pointer-events: none;
+        opacity: 0;
+        background: radial-gradient(
+          ellipse 62% 56% at 50% 38%,
+          rgba(255, 220, 160, 0.78) 0%,
+          rgba(255, 186, 90, 0.36) 26%,
+          rgba(255, 160, 70, 0.14) 55%,
+          rgba(255, 150, 60, 0.04) 78%,
+          transparent 100%
+        );
+        transition: opacity 0.9s ease;
+      }
+
+      #lamp.lit .lamp-on,
+      #lamp.lit .lamp-glow {
+        opacity: 1;
+      }
+
+      #lamp:focus {
+        outline: none;
+      }
+
+      #lamp:focus-visible {
+        outline: 2px solid rgba(255, 196, 120, 0.9);
+        outline-offset: 4px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #lamp .lamp-on,
+        #lamp .lamp-glow {
+          transition: none;
+        }
+      }
+
+      #couch {
+        z-index: 9;
+        left: 47.4%;
+        top: 48.7%;
+        width: 34%;
+      }
+
+      #throw {
+        z-index: 10;
+        left: 48.2%;
+        top: 49.8%;
+        width: 13%;
+      }
+
+      #green {
+        z-index: 10;
+        left: 64.9%;
+        top: 49.3%;
+        width: 8%;
+      }
+
+      #purple {
+        z-index: 10;
+        left: 68.3%;
+        top: 51.2%;
+        width: 8%;
+      }
+
+      #table {
+        z-index: 10;
+        left: 64.4%;
+        top: 71.9%;
+        width: 18%;
+      }
+
+      #coaster {
+        z-index: 11;
+        left: 69.8%;
+        top: 76%;
+        width: 7.2%;
+      }
+
+      #sakura {
+        z-index: 11;
+        left: 48%;
+        top: 0%;
+        width: 10.5%;
+      }
+
+      #vine {
+        z-index: 11;
+        left: 0.8%;
+        top: 0%;
+        width: 8.5%;
+      }
+
+      #leaf {
+        z-index: 7;
+        left: 74%;
+        top: 44%;
+        width: 8%;
+      }
+
+      #pot {
+        z-index: 11;
+        left: 69.5%;
+        top: 80%;
+        width: 8%;
+      }
+
+      #shelf:focus,
+      #notebook:focus {
+        outline: none;
+      }
+
+      #shelf:focus-visible,
+      #notebook:focus-visible {
+        outline: 2px solid #243044;
+        outline-offset: 4px;
+      }
+
+      .books {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        background: rgba(36, 48, 68, 0.28);
+        font-family: Georgia, "Iowan Old Style", Palatino, serif;
+        color: #243044;
+      }
+
+      .books[hidden] {
+        display: none;
+      }
+
+      .books-card {
+        width: min(520px, 100%);
+        max-height: min(78vh, 720px);
+        display: flex;
+        flex-direction: column;
+        background: #fffdf6;
+        border: 3px solid #243044;
+        box-shadow: 8px 10px 0 rgba(36, 48, 68, 0.18);
+      }
+
+      .books-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 16px 8px;
+      }
+
+      .books-head h2 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: normal;
+      }
+
+      .books-head button,
+      .books-filters button {
+        font: inherit;
         color: inherit;
-        opacity: 0.55;
+        background: transparent;
+        border: 2px solid transparent;
+        cursor: pointer;
+      }
+
+      .books-head button {
+        padding: 4px 8px;
+        border-color: #243044;
+      }
+
+      .books-tools {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 0 16px 10px;
+      }
+
+      .books-tools input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 8px 10px;
+        border: 2px solid #243044;
+        background: #fff;
+        font: inherit;
+        color: inherit;
+      }
+
+      .books-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .books-filters button {
+        padding: 4px 8px;
+        border-color: rgba(36, 48, 68, 0.28);
+      }
+
+      .books-filters button[aria-pressed="true"] {
+        border-color: #243044;
+        background: rgba(36, 48, 68, 0.08);
+      }
+
+      .books-count {
+        margin: 0;
+        padding: 0 16px 8px;
+        font-size: 14px;
+      }
+
+      .books-list {
+        margin: 0;
+        padding: 0 16px 14px;
+        list-style: none;
+        overflow: auto;
+        min-height: 0;
+      }
+
+      .books-list li {
+        padding: 10px 0;
+        border-top: 1px solid rgba(36, 48, 68, 0.12);
+      }
+
+      .books-list p {
+        margin: 0;
+      }
+
+      .book-title {
+        font-size: 16px;
+      }
+
+      .book-by,
+      .book-meta {
+        font-size: 14px;
+        color: #5c4a3a;
+      }
+
+      .walls {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid rgba(36, 48, 68, 0.16);
+      }
+
+      .walls p {
+        margin: 0;
+        font-family: Georgia, "Iowan Old Style", Palatino, serif;
+        font-size: 15px;
+        color: #243044;
+      }
+
+      .walls div {
+        display: flex;
+        gap: 8px;
+      }
+
+      .walls button {
+        width: 22px;
+        height: 22px;
+        padding: 0;
+        border: 2px solid #fffdf6;
+        border-radius: 50%;
+        cursor: pointer;
+      }
+
+      .walls button[aria-pressed="true"] {
+        outline: 2px solid #243044;
+        outline-offset: 2px;
+      }
+
+      .copied {
+        position: fixed;
+        z-index: 8;
+        left: 50%;
+        bottom: 18px;
+        margin: 0;
+        transform: translateX(-50%);
+        font-family: Georgia, "Iowan Old Style", Palatino, serif;
+        font-size: 15px;
+        color: #243044;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .copied.show {
+        opacity: 1;
+      }
+
+      .box {
+        position: fixed;
+        z-index: 10;
+        left: 12px;
+        bottom: 12px;
+        font-family: Georgia, "Iowan Old Style", Palatino, serif;
+        color: #243044;
+      }
+
+      .box > button {
+        padding: 0;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        line-height: 0;
+      }
+
+      .box > button img {
+        width: 92px;
+        height: auto;
+        display: block;
+      }
+
+      .box > button:hover img,
+      .box > button[aria-expanded="true"] img {
+        transform: rotate(-8deg);
+      }
+
+      .box-panel {
+        position: absolute;
+        left: 12px;
+        bottom: 108px;
+        width: 236px;
+        max-height: 70vh;
+        margin: 0;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background: #fffdf6;
+        border: 2px solid #243044;
+      }
+
+      .box-panel[hidden] {
+        display: none;
+      }
+
+      .box-panel ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        overflow: auto;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+
+      .box-panel li button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 78px;
+        padding: 6px;
+        background: transparent;
+        border: 0;
+        border-radius: 6px;
+        cursor: pointer;
+        opacity: 0.4;
+      }
+
+      .box-panel li button img {
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        pointer-events: none;
+      }
+
+      .box-panel li button[aria-pressed="true"] {
+        opacity: 1;
+        background: rgba(36, 48, 68, 0.08);
       }
     </style>
   </head>
   <body>
-    <main>
-      <div class="sheet">
-        <svg viewBox="0 0 800 1100" role="img" aria-label="A painted room with a couch, a board, a mushroom lamp, a record player, a writing desk, and a bookshelf.">
-          <defs>
-            <clipPath id="garden-clip">
-              <rect x="214" y="78" width="372" height="390" />
-            </clipPath>
-          </defs>
-
-          <g id="walls">
-            <rect width="800" height="1100" fill="#ff7eb3" />
-          </g>
-
-          <g id="window">
-            <g clip-path="url(#garden-clip)">
-              <rect x="214" y="78" width="372" height="390" fill="#c6f26d" />
-              <rect x="214" y="78" width="372" height="120" fill="#fff4b0" />
-              <ellipse cx="280" cy="210" rx="70" ry="90" fill="#2f9e44" />
-              <ellipse cx="360" cy="180" rx="84" ry="100" fill="#7ed957" />
-              <ellipse cx="460" cy="200" rx="90" ry="110" fill="#3cb043" />
-              <ellipse cx="520" cy="250" rx="60" ry="80" fill="#1f7a32" />
-              <ellipse cx="330" cy="280" rx="50" ry="46" fill="#8fd14f" />
-              <ellipse cx="430" cy="300" rx="70" ry="50" fill="#b6e85b" />
-              <ellipse cx="300" cy="340" rx="36" ry="28" fill="#ff5d8f" />
-              <ellipse cx="390" cy="360" rx="28" ry="22" fill="#ff4d6d" />
-              <ellipse cx="480" cy="340" rx="32" ry="24" fill="#ff8c42" />
-              <circle cx="340" cy="320" r="9" fill="#ffe66d" />
-              <circle cx="450" cy="250" r="8" fill="#fffaf3" />
-              <ellipse cx="250" cy="160" rx="22" ry="10" fill="#1f7a32" transform="rotate(-40 250 160)" />
-              <ellipse cx="500" cy="140" rx="26" ry="11" fill="#143d22" transform="rotate(30 500 140)" />
-            </g>
-            <rect x="204" y="68" width="392" height="410" fill="none" stroke="#fffaf3" stroke-width="20" />
-            <rect x="204" y="68" width="392" height="410" fill="none" stroke="#1a2744" stroke-width="4" />
-            <path d="M400 78 V468" stroke="#fffaf3" stroke-width="10" />
-          </g>
-
-          <g id="shelf">
-            <path d="M28 430 H188 V760 H28 Z" fill="#2b62e6" stroke="#1a2744" stroke-width="4" stroke-linejoin="round" />
-            <rect x="42" y="446" width="132" height="298" fill="#ffd6e6" />
-            <g stroke="#1a2744" stroke-width="2.4">
-              <rect x="48" y="456" width="16" height="86" fill="#e23b3b" />
-              <rect x="66" y="468" width="14" height="74" fill="#ffe66d" />
-              <rect x="82" y="452" width="18" height="90" fill="#2a9d8f" />
-              <rect x="102" y="462" width="14" height="80" fill="#ff8c42" />
-              <rect x="118" y="456" width="16" height="86" fill="#9b5de5" />
-              <rect x="136" y="470" width="14" height="72" fill="#fffaf3" />
-              <rect x="152" y="458" width="16" height="84" fill="#2ec4b6" />
-
-              <rect x="48" y="566" width="18" height="78" fill="#f72585" />
-              <rect x="68" y="558" width="14" height="86" fill="#4cc9f0" />
-              <rect x="84" y="572" width="16" height="72" fill="#80b918" />
-              <rect x="102" y="560" width="18" height="84" fill="#fb8500" />
-              <rect x="122" y="568" width="14" height="76" fill="#264653" />
-              <rect x="138" y="556" width="16" height="88" fill="#ffd166" />
-              <rect x="156" y="574" width="12" height="70" fill="#e76f51" />
-
-              <rect x="46" y="668" width="16" height="70" fill="#2b62e6" />
-              <rect x="64" y="676" width="18" height="62" fill="#ff5d8f" />
-              <rect x="84" y="664" width="15" height="74" fill="#ffe66d" />
-              <rect x="101" y="672" width="18" height="66" fill="#2a9d8f" />
-              <rect x="121" y="680" width="14" height="58" fill="#e23b3b" />
-              <rect x="137" y="666" width="16" height="72" fill="#c77dff" />
-              <rect x="155" y="678" width="14" height="60" fill="#8fd14f" />
-            </g>
-            <rect x="36" y="544" width="144" height="10" fill="#1a2744" />
-            <rect x="36" y="656" width="144" height="10" fill="#1a2744" />
-            <rect x="36" y="748" width="144" height="12" fill="#1a2744" />
-          </g>
-
-          <g id="board">
-            <rect x="612" y="448" width="164" height="200" rx="3" fill="#f3c96a" stroke="#1a2744" stroke-width="4" />
-            <g transform="rotate(-6 680 500)">
-              <rect x="636" y="468" width="78" height="58" fill="#fffaf3" stroke="#1a2744" stroke-width="2.5" />
-              <circle cx="675" cy="474" r="4.5" fill="#e23b3b" />
-              <path d="M648 492 H700 M648 504 H694 M648 516 H686" stroke="#1a2744" stroke-width="1.6" stroke-linecap="round" />
-            </g>
-            <g transform="rotate(4 730 545)">
-              <rect x="690" y="512" width="70" height="54" fill="#fff6ea" stroke="#1a2744" stroke-width="2.5" />
-              <circle cx="726" cy="518" r="4.5" fill="#e23b3b" />
-              <path d="M702 534 H750 M702 546 H742" stroke="#1a2744" stroke-width="1.6" stroke-linecap="round" />
-            </g>
-            <g transform="rotate(-2 670 600)">
-              <rect x="628" y="572" width="82" height="50" fill="#fffaf3" stroke="#1a2744" stroke-width="2.5" />
-              <circle cx="670" cy="578" r="4.5" fill="#e23b3b" />
-              <path d="M640 594 H698 M640 606 H688" stroke="#1a2744" stroke-width="1.6" stroke-linecap="round" />
-            </g>
-          </g>
-
-          <g id="rug">
-            <path d="M36 860 H772 L752 1076 H58 Z" fill="#ffe08a" stroke="#1a2744" stroke-width="4" />
-            <path d="M58 882 H748 L732 1054 H76 Z" fill="none" stroke="#2b62e6" stroke-width="8" />
-            <g fill="#ff5d8f">
-              <ellipse cx="140" cy="960" rx="26" ry="15" />
-              <ellipse cx="250" cy="1010" rx="22" ry="13" />
-              <ellipse cx="360" cy="940" rx="28" ry="15" />
-              <ellipse cx="470" cy="1020" rx="24" ry="14" />
-              <ellipse cx="580" cy="950" rx="20" ry="12" />
-              <ellipse cx="670" cy="1010" rx="26" ry="14" />
-            </g>
-            <g fill="#2f9e44">
-              <ellipse cx="170" cy="980" rx="16" ry="7" transform="rotate(-28 170 980)" />
-              <ellipse cx="320" cy="990" rx="14" ry="7" transform="rotate(24 320 990)" />
-              <ellipse cx="500" cy="970" rx="15" ry="7" transform="rotate(-18 500 970)" />
-              <ellipse cx="640" cy="980" rx="14" ry="7" transform="rotate(32 640 980)" />
-            </g>
-          </g>
-
-          <g id="desk">
-            <rect x="48" y="812" width="14" height="70" fill="#1a2744" />
-            <rect x="210" y="812" width="14" height="70" fill="#1a2744" />
-            <path d="M28 768 H250 V818 H28 Z" fill="#2457d6" stroke="#1a2744" stroke-width="4" />
-            <rect x="118" y="708" width="108" height="72" fill="#fffaf3" stroke="#1a2744" stroke-width="2.5" transform="rotate(-3 172 744)" />
-            <path d="M136 734 C158 728 170 742 198 732 M134 750 C160 744 176 758 200 748 M138 766 C162 760 178 772 196 764" fill="none" stroke="#1a2744" stroke-width="1.8" stroke-linecap="round" />
-            <path d="M214 724 L246 792" stroke="#e23b3b" stroke-width="4" stroke-linecap="round" />
-            <circle cx="247" cy="794" r="5" fill="#1a2744" />
-          </g>
-
-          <g id="vase">
-            <path d="M62 730 Q52 768 66 792 H108 Q122 768 112 730 Z" fill="#fff1d6" stroke="#1a2744" stroke-width="3" />
-            <ellipse cx="70" cy="700" rx="20" ry="14" fill="#ff5d8f" />
-            <ellipse cx="96" cy="684" rx="22" ry="16" fill="#ff4d6d" />
-            <ellipse cx="122" cy="704" rx="16" ry="13" fill="#ff8c42" />
-            <ellipse cx="86" cy="716" rx="12" ry="10" fill="#ffe66d" />
-            <ellipse cx="58" cy="718" rx="16" ry="7" fill="#2f9e44" transform="rotate(-36 58 718)" />
-            <ellipse cx="128" cy="716" rx="16" ry="7" fill="#1f7a32" transform="rotate(32 128 716)" />
-          </g>
-
-          <g id="chair">
-            <rect x="268" y="800" width="12" height="78" fill="#c9842a" />
-            <rect x="352" y="800" width="12" height="78" fill="#c9842a" />
-            <rect x="258" y="786" width="116" height="24" rx="4" fill="#ffd23f" stroke="#1a2744" stroke-width="3" />
-            <path d="M266 660 H378 V798 H266 Z" fill="#ffd23f" stroke="#1a2744" stroke-width="3.5" />
-            <g stroke="#1a2744" stroke-width="1.5" opacity="0.65">
-              <path d="M282 678 V782 M300 678 V782 M318 678 V782 M336 678 V782 M354 678 V782" />
-              <path d="M274 700 H370 M274 722 H370 M274 744 H370 M274 766 H370" />
-            </g>
-          </g>
-
-          <g id="couch">
-            <path d="M430 790 H620 Q660 790 660 830 V900 H430 Z" fill="#f0b429" stroke="#1a2744" stroke-width="4" stroke-linejoin="round" />
-            <path d="M400 830 H660 Q678 830 678 852 V980 H400 Z" fill="#ffd23f" stroke="#1a2744" stroke-width="4" stroke-linejoin="round" />
-            <path d="M392 848 H432 V990 H392 Q378 990 378 970 V868 Q378 848 392 848 Z" fill="#e8a317" stroke="#1a2744" stroke-width="4" />
-            <path d="M648 848 H688 Q704 848 704 870 V968 Q704 990 686 990 H648 Z" fill="#e8a317" stroke="#1a2744" stroke-width="4" />
-            <ellipse cx="500" cy="850" rx="34" ry="24" fill="#ff5d8f" />
-            <ellipse cx="590" cy="900" rx="30" ry="22" fill="#ff4d6d" />
-            <ellipse cx="600" cy="860" rx="26" ry="20" fill="#f72585" />
-            <ellipse cx="520" cy="940" rx="28" ry="18" fill="#ff8c42" />
-            <ellipse cx="600" cy="940" rx="22" ry="16" fill="#ff7aa2" />
-            <ellipse cx="470" cy="910" rx="16" ry="7" fill="#2f9e44" transform="rotate(-30 470 910)" />
-            <ellipse cx="620" cy="880" rx="14" ry="6" fill="#1f7a32" transform="rotate(28 620 880)" />
-            <ellipse cx="460" cy="930" rx="32" ry="24" fill="#fff1a8" stroke="#1a2744" stroke-width="3" />
-          </g>
-
-          <g id="lamp" transform="translate(-390, 130)">
-            <ellipse cx="560" cy="868" rx="46" ry="14" fill="#ffd27a" opacity="0.95" />
-            <ellipse cx="560" cy="884" rx="22" ry="7" fill="#e7c48a" stroke="#1a2744" stroke-width="2.5" />
-            <path d="M546 820 Q538 852 544 880 H576 Q582 852 574 820 Z" fill="#fff1d6" stroke="#1a2744" stroke-width="3" />
-            <path d="M520 818 Q528 762 560 752 Q596 760 602 818 Q560 802 520 818 Z" fill="#e23b3b" stroke="#1a2744" stroke-width="3.5" />
-            <path d="M532 816 Q560 836 590 816" fill="#fff6e8" />
-            <ellipse cx="540" cy="788" rx="8" ry="6" fill="#fff6e8" />
-            <ellipse cx="560" cy="776" rx="6" ry="5" fill="#fff6e8" />
-            <ellipse cx="582" cy="792" rx="7" ry="5" fill="#fff6e8" />
-          </g>
-
-          <g id="vinyl" transform="translate(16, 8)">
-            <g transform="rotate(-12 700 930)">
-              <rect x="668" y="888" width="70" height="86" fill="#e23b3b" stroke="#1a2744" stroke-width="3" />
-              <circle cx="703" cy="932" r="14" fill="#ffe66d" />
-            </g>
-            <g transform="rotate(9 748 920)">
-              <rect x="718" y="878" width="70" height="86" fill="#2a9d8f" stroke="#1a2744" stroke-width="3" />
-              <circle cx="753" cy="922" r="14" fill="#fffaf3" />
-            </g>
-            <rect x="640" y="990" width="148" height="20" rx="2" fill="#f2c14e" stroke="#1a2744" stroke-width="3" />
-            <rect x="656" y="1010" width="14" height="40" fill="#2457d6" stroke="#1a2744" stroke-width="2.5" />
-            <rect x="758" y="1010" width="14" height="40" fill="#2457d6" stroke="#1a2744" stroke-width="2.5" />
-            <circle cx="714" cy="972" r="58" fill="#161616" stroke="#d9d2ca" stroke-width="8" />
-            <circle cx="714" cy="972" r="18" fill="#e23b3b" stroke="#1a2744" stroke-width="2.5" />
-            <circle cx="714" cy="972" r="4" fill="#fffaf3" />
-            <line x1="762" y1="920" x2="736" y2="964" stroke="#f4efe8" stroke-width="5" stroke-linecap="round" />
-            <circle cx="764" cy="914" r="8" fill="#f4efe8" stroke="#1a2744" stroke-width="2" />
-          </g>
-
-          <g id="shutter-left">
-            <path d="M200 86 L48 132 L64 430 L214 384 Z" fill="#2b62e6" stroke="#1a2744" stroke-width="4" stroke-linejoin="round" />
-            <path d="M176 140 L78 164 L86 230 L184 208 Z" fill="#9ec1ff" />
-            <path d="M180 236 L86 258 L94 324 L188 304 Z" fill="#fffaf3" />
-            <path d="M184 332 L94 352 L100 400 L190 382 Z" fill="#9ec1ff" />
-          </g>
-
-          <g id="shutter-right">
-            <path d="M600 86 L752 128 L736 428 L586 386 Z" fill="#2b62e6" stroke="#1a2744" stroke-width="4" stroke-linejoin="round" />
-            <path d="M624 140 L722 160 L714 226 L616 208 Z" fill="#9ec1ff" />
-            <path d="M620 236 L714 256 L706 322 L612 304 Z" fill="#fffaf3" />
-            <path d="M616 332 L706 350 L698 398 L608 382 Z" fill="#9ec1ff" />
-          </g>
-
-          <g id="leaves">
-            <g fill="#1f7a32" stroke="#143d22" stroke-width="2">
-              <ellipse cx="64" cy="28" rx="16" ry="62" transform="rotate(-36 64 28)" />
-              <ellipse cx="104" cy="16" rx="14" ry="70" transform="rotate(-8 104 16)" />
-              <ellipse cx="146" cy="26" rx="14" ry="64" transform="rotate(18 146 26)" />
-              <ellipse cx="34" cy="58" rx="12" ry="48" transform="rotate(-54 34 58)" />
-            </g>
-            <g fill="#3cb043">
-              <ellipse cx="90" cy="40" rx="11" ry="46" transform="rotate(6 90 40)" />
-              <ellipse cx="128" cy="34" rx="10" ry="42" transform="rotate(-16 128 34)" />
-            </g>
-            <g fill="#1f7a32">
-              <ellipse cx="700" cy="26" rx="13" ry="46" transform="rotate(22 700 26)" />
-              <ellipse cx="744" cy="18" rx="12" ry="42" transform="rotate(-12 744 18)" />
-              <ellipse cx="668" cy="42" rx="11" ry="36" transform="rotate(42 668 42)" />
-            </g>
-          </g>
-        </svg>
+    <main
+      class="room"
+      aria-label="A painted room with a couch, a board, a mushroom lamp, a record player, a writing desk, a bookshelf, plants, and a ceiling light."
+    >
+      <div class="stage">
+        <img
+          class="bg"
+          src="/art/casa-room.jpg"
+          alt="A rose wall and a hardwood floor."
+        />
+        <img id="rug" class="piece away" src="/art/casa-rug.png" alt="A yellow floral rug." />
+        <img id="garden" class="piece" src="/art/casa-garden-rug.png?v=3" alt="A garden rug with trees, animals, and flowers." />
+        <img id="window" class="piece" src="/art/casa-window.png" alt="An open window onto a garden." />
+        <img id="board" class="piece" src="/art/casa-board.png?v=3" alt="A linen board with notes, photos, and dried flowers." />
+        <img id="shelf" class="piece" src="/art/casa-shelf.png" alt="" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="books" aria-label="Bookshelf" />
+        <img id="vinyl" class="piece" src="/art/casa-vinyl.png" alt="A record player." />
+        <img
+          id="desk"
+          class="piece"
+          src="/art/casa-desk.png?v=4"
+          alt="A blue writing desk and a yellow chair."
+        />
+        <img id="glass" class="piece" src="/art/casa-glass.png?v=1" alt="A glass of daisies and tulips." />
+        <img id="notebook" class="piece" src="/art/casa-notebook.png?v=2" alt="" role="link" tabindex="0" aria-label="Notebook, erica-hu.com" />
+        <img id="pen" class="piece" src="/art/casa-pen.png?v=2" alt="A turquoise pen." />
+        <img id="macbook" class="piece" src="/art/casa-macbook.png?v=1" alt="An open laptop." />
+        <div id="lamp" class="piece" role="button" tabindex="0" aria-pressed="false" aria-label="Mushroom lamp">
+          <img class="lamp-off" src="/art/casa-lamp.png?v=3" alt="" />
+          <img class="lamp-on" src="/art/casa-lamp-on.png?v=3" alt="" />
+          <span class="lamp-glow"></span>
+        </div>
+        <img id="couch" class="piece" src="/art/casa-couch.png" alt="A yellow couch." />
+        <img id="throw" class="piece" src="/art/casa-throw.png?v=2" alt="A quilted throw blanket." />
+        <img id="green" class="piece" src="/art/casa-cushion-green.png?v=1" alt="A green cushion." />
+        <img id="purple" class="piece" src="/art/casa-cushion-purple.png?v=1" alt="A purple cushion with a blue ribbon." />
+        <img id="table" class="piece" src="/art/casa-table.png?v=3" alt="A round wooden coffee table." />
+        <img id="coaster" class="piece" src="/art/casa-coaster.png?v=1" alt="A rattan coaster." />
+        <img id="sakura" class="piece" src="/art/casa-sakura.png?v=7" alt="A sakura paper lantern." />
+        <img id="vine" class="piece" src="/art/casa-vine.png?v=1" alt="A hanging plant in a blue pot." />
+        <img id="leaf" class="piece" src="/art/casa-leaf.png?v=1" alt="A leafy plant in a yellow pot." />
+        <img id="pot" class="piece" src="/art/casa-pot.png?v=1" alt="A flowering plant in a lilac pot." />
       </div>
-      <h1>casa</h1>
-      <footer>
-        <a href="https://portfolio.erica-hu.com">portfolio</a>
-      </footer>
     </main>
+    <p class="copied" aria-live="polite">Copied</p>
+    <div class="box">
+      <button type="button" id="box-toggle" aria-expanded="false" aria-controls="box-panel" aria-label="Brush">
+        <img src="/art/casa-brush.png?v=1" alt="" />
+      </button>
+      <div class="box-panel" id="box-panel" hidden>
+        <div class="walls">
+          <p id="wall-name">Rose</p>
+          <div role="group" aria-label="Wall color">
+            <button type="button" data-wall="rose" aria-pressed="true" aria-label="Rose" style="background: #f24a81"></button>
+            <button type="button" data-wall="seaglass" aria-pressed="false" aria-label="Sea glass" style="background: #40c4b2"></button>
+            <button type="button" data-wall="lilac" aria-pressed="false" aria-label="Lilac" style="background: #c48ce0"></button>
+            <button type="button" data-wall="apricot" aria-pressed="false" aria-label="Apricot" style="background: #ff9448"></button>
+            <button type="button" data-wall="lime" aria-pressed="false" aria-label="Lime" style="background: #a8d23a"></button>
+          </div>
+        </div>
+        <ul>
+        <li><button type="button" data-piece="window" aria-pressed="true" aria-label="Window"><img src="/art/casa-window.png" alt="" /></button></li>
+        <li><button type="button" data-piece="board" aria-pressed="true" aria-label="Board"><img src="/art/casa-board.png?v=3" alt="" /></button></li>
+        <li><button type="button" data-piece="shelf" aria-pressed="true" aria-label="Shelf"><img src="/art/casa-shelf.png" alt="" /></button></li>
+        <li><button type="button" data-piece="desk" aria-pressed="true" aria-label="Desk"><img src="/art/casa-desk.png?v=4" alt="" /></button></li>
+        <li><button type="button" data-piece="glass" aria-pressed="true" aria-label="Glass"><img src="/art/casa-glass.png?v=1" alt="" /></button></li>
+        <li><button type="button" data-piece="notebook" aria-pressed="true" aria-label="Notebook"><img src="/art/casa-notebook.png?v=2" alt="" /></button></li>
+        <li><button type="button" data-piece="pen" aria-pressed="true" aria-label="Pen"><img src="/art/casa-pen.png?v=2" alt="" /></button></li>
+        <li><button type="button" data-piece="macbook" aria-pressed="true" aria-label="MacBook"><img src="/art/casa-macbook.png?v=1" alt="" /></button></li>
+        <li><button type="button" data-piece="lamp" aria-pressed="true" aria-label="Lamp"><img src="/art/casa-lamp.png?v=3" alt="" /></button></li>
+        <li><button type="button" data-piece="sakura" aria-pressed="true" aria-label="Sakura light"><img src="/art/casa-sakura.png?v=7" alt="" /></button></li>
+        <li><button type="button" data-piece="vine" aria-pressed="true" aria-label="Hanging plant"><img src="/art/casa-vine.png?v=1" alt="" /></button></li>
+        <li><button type="button" data-piece="leaf" aria-pressed="true" aria-label="Leafy plant"><img src="/art/casa-leaf.png?v=1" alt="" /></button></li>
+        <li><button type="button" data-piece="pot" aria-pressed="true" aria-label="Flowering plant"><img src="/art/casa-pot.png?v=1" alt="" /></button></li>
+        <li><button type="button" data-piece="vinyl" aria-pressed="true" aria-label="Records"><img src="/art/casa-vinyl.png" alt="" /></button></li>
+        <li><button type="button" data-piece="couch" aria-pressed="true" aria-label="Couch"><img src="/art/casa-couch.png" alt="" /></button></li>
+        <li><button type="button" data-piece="throw" aria-pressed="true" aria-label="Throw"><img src="/art/casa-throw.png?v=2" alt="" /></button></li>
+        <li><button type="button" data-piece="green" aria-pressed="true" aria-label="Green cushion"><img src="/art/casa-cushion-green.png?v=1" alt="" /></button></li>
+        <li><button type="button" data-piece="purple" aria-pressed="true" aria-label="Purple cushion"><img src="/art/casa-cushion-purple.png?v=1" alt="" /></button></li>
+        <li><button type="button" data-piece="table" aria-pressed="true" aria-label="Coffee table"><img src="/art/casa-table.png?v=3" alt="" /></button></li>
+        <li><button type="button" data-piece="coaster" aria-pressed="true" aria-label="Coaster"><img src="/art/casa-coaster.png?v=1" alt="" /></button></li>
+        <li><button type="button" data-piece="rug" aria-pressed="false" aria-label="Yellow rug"><img src="/art/casa-rug.png" alt="" /></button></li>
+        <li><button type="button" data-piece="garden" aria-pressed="true" aria-label="Garden rug"><img src="/art/casa-garden-rug.png?v=3" alt="" /></button></li>
+        </ul>
+      </div>
+    </div>
+    <div class="books" id="books" hidden>
+      <div class="books-card" role="dialog" aria-modal="true" aria-labelledby="books-title">
+        <div class="books-head">
+          <h2 id="books-title">Books</h2>
+          <button type="button" id="books-close">Close</button>
+        </div>
+        <div class="books-tools">
+          <input id="books-find" type="search" placeholder="Find a book" aria-label="Find a book" />
+          <div class="books-filters" role="group" aria-label="Stars">
+            <button type="button" data-stars="all" aria-pressed="true">All</button>
+            <button type="button" data-stars="5" aria-pressed="false">5 stars</button>
+            <button type="button" data-stars="4" aria-pressed="false">4 stars</button>
+          </div>
+        </div>
+        <p class="books-count" id="books-count"></p>
+        <ul class="books-list" id="books-list"></ul>
+      </div>
+    </div>
+    <script>
+      const walls = {
+        rose: {
+          name: "Rose",
+          src: "/art/casa-room.jpg",
+          color: "#f24a81",
+          alt: "A rose wall and a hardwood floor.",
+        },
+        seaglass: {
+          name: "Sea glass",
+          src: "/art/casa-room-seaglass.jpg",
+          color: "#40c4b2",
+          alt: "A sea glass wall and a hardwood floor.",
+        },
+        lilac: {
+          name: "Lilac",
+          src: "/art/casa-room-lilac.jpg",
+          color: "#c48ce0",
+          alt: "A lilac wall and a hardwood floor.",
+        },
+        apricot: {
+          name: "Apricot",
+          src: "/art/casa-room-apricot.jpg",
+          color: "#ff9448",
+          alt: "An apricot wall and a hardwood floor.",
+        },
+        lime: {
+          name: "Lime",
+          src: "/art/casa-room-lime.jpg",
+          color: "#a8d23a",
+          alt: "A lime wall and a hardwood floor.",
+        },
+      };
+
+      const bg = document.querySelector(".bg");
+      const nameEl = document.querySelector("#wall-name");
+      const buttons = [...document.querySelectorAll("[data-wall]")];
+
+      function apply(id) {
+        const wall = walls[id] || walls.rose;
+        const key = walls[id] ? id : "rose";
+        document.documentElement.style.background = wall.color;
+        document.body.style.background = wall.color;
+        bg.src = wall.src;
+        bg.alt = wall.alt;
+        nameEl.textContent = wall.name;
+        for (const button of buttons) {
+          button.setAttribute("aria-pressed", button.dataset.wall === key ? "true" : "false");
+        }
+        try {
+          localStorage.setItem("casa-wall", key);
+        } catch (error) {}
+      }
+
+      for (const id of Object.keys(walls)) {
+        const img = new Image();
+        img.src = walls[id].src;
+      }
+
+      for (const button of buttons) {
+        button.addEventListener("click", () => apply(button.dataset.wall));
+      }
+
+      let saved = "rose";
+      try {
+        saved = localStorage.getItem("casa-wall") || "rose";
+      } catch (error) {}
+      if (saved !== "rose") apply(saved);
+
+      const stage = document.querySelector(".stage");
+      const pieces = [...document.querySelectorAll(".piece")];
+      const copied = document.querySelector(".copied");
+      const light = document.getElementById("window");
+      const flatPieces = new Set(["rug", "garden"]);
+      const wallPieces = new Set(["window", "board"]);
+      const smallPieces = new Set(["pen", "notebook", "glass", "green", "purple", "macbook", "pot", "coaster"]);
+      let drag = null;
+      let copiedTimer = 0;
+      let shadowFrame = 0;
+
+      function castShadow(piece) {
+        if (!piece || wallPieces.has(piece.id) || flatPieces.has(piece.id)) {
+          if (piece) piece.style.filter = "";
+          return;
+        }
+        const box = stage.getBoundingClientRect();
+        const lamp = light.getBoundingClientRect();
+        const rect = piece.getBoundingClientRect();
+        const lx = lamp.left + lamp.width * 0.5;
+        const ly = lamp.top + lamp.height * 0.45;
+        const px = rect.left + rect.width * 0.5;
+        const py = rect.top + rect.height * 0.78;
+        let dx = px - lx;
+        let dy = py - ly;
+        const dist = Math.hypot(dx, dy) || 1;
+        let nx = dx / dist;
+        let ny = Math.max(dy / dist, 0.55);
+        const norm = Math.hypot(nx, ny) || 1;
+        nx /= norm;
+        ny /= norm;
+        const far = Math.min(dist / box.width, 0.62);
+        const reach = smallPieces.has(piece.id) ? 0.55 : 1;
+        const unit = box.width / 100;
+        const length = (0.7 + far * 2.6) * unit * reach;
+        const blur = (0.35 + far * 1.15) * unit;
+        const alpha = (0.22 + (1 - far) * 0.08).toFixed(2);
+        if (piece.id === "sakura") {
+          const near = (1.1 * unit).toFixed(1);
+          const farGlow = (2.6 * unit).toFixed(1);
+          piece.style.filter = `drop-shadow(0 0 ${near}px rgba(255, 220, 170, 0.5)) drop-shadow(0 0 ${farGlow}px rgba(255, 206, 150, 0.22))`;
+          return;
+        }
+        let filter = `drop-shadow(${(nx * length).toFixed(1)}px ${(ny * length).toFixed(1)}px ${blur.toFixed(1)}px rgba(52, 44, 78, ${alpha}))`;
+        if (piece.id === "lamp") {
+          piece.style.filter = "";
+          for (const img of piece.querySelectorAll("img")) img.style.filter = filter;
+          return;
+        }
+        piece.style.filter = filter;
+      }
+
+      function castShadows() {
+        for (const piece of pieces) castShadow(piece);
+      }
+
+      function scheduleShadows(piece) {
+        window.cancelAnimationFrame(shadowFrame);
+        shadowFrame = window.requestAnimationFrame(() => {
+          castShadow(piece);
+          if (piece.id === "window") castShadows();
+        });
+      }
+
+      function layoutText() {
+        const box = stage.getBoundingClientRect();
+        return pieces
+          .map((piece) => {
+            const rect = piece.getBoundingClientRect();
+            const left = ((rect.left - box.left) / box.width) * 100;
+            const top = ((rect.top - box.top) / box.height) * 100;
+            const width = (rect.width / box.width) * 100;
+            const height = (rect.height / box.height) * 100;
+            const num = (value) => `${Math.round(value * 10) / 10}%`;
+            const away = piece.classList.contains("away") ? " away" : "";
+            return `${piece.id}: left ${num(left)}, top ${num(top)}, width ${num(width)}, height ${num(height)}${away}`;
+          })
+          .join("\n");
+      }
+
+      function showCopied() {
+        copied.classList.add("show");
+        window.clearTimeout(copiedTimer);
+        copiedTimer = window.setTimeout(() => copied.classList.remove("show"), 1400);
+      }
+
+      function copyLayout() {
+        const text = layoutText();
+        const area = document.createElement("textarea");
+        area.value = text;
+        area.setAttribute("readonly", "");
+        area.style.position = "fixed";
+        area.style.opacity = "0";
+        document.body.appendChild(area);
+        area.select();
+        let ok = false;
+        try {
+          ok = document.execCommand("copy");
+        } catch (error) {}
+        area.remove();
+        const finish = () => {
+          if (ok) showCopied();
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(showCopied).catch(finish);
+        } else {
+          finish();
+        }
+      }
+
+      function setLamp(on) {
+        const lamp = document.getElementById("lamp");
+        lamp.classList.toggle("lit", on);
+        lamp.setAttribute("aria-pressed", on ? "true" : "false");
+        try {
+          localStorage.setItem("casa-lamp", on ? "on" : "off");
+        } catch (error) {}
+      }
+
+      const lampButton = document.getElementById("lamp");
+      lampButton.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        setLamp(!lampButton.classList.contains("lit"));
+      });
+
+      try {
+        if (localStorage.getItem("casa-lamp") === "on") setLamp(true);
+      } catch (error) {}
+
+      for (const piece of pieces) {
+        piece.addEventListener("pointerdown", (event) => {
+          if (event.button !== 0 || piece.classList.contains("away")) return;
+          const box = stage.getBoundingClientRect();
+          const rect = piece.getBoundingClientRect();
+          piece.style.left = `${((rect.left - box.left) / box.width) * 100}%`;
+          piece.style.top = `${((rect.top - box.top) / box.height) * 100}%`;
+          piece.style.right = "auto";
+          piece.style.bottom = "auto";
+          piece.classList.add("dragging");
+          try {
+            piece.setPointerCapture(event.pointerId);
+          } catch (error) {}
+          drag = {
+            piece,
+            dx: event.clientX - rect.left,
+            dy: event.clientY - rect.top,
+            moved: false,
+            x: event.clientX,
+            y: event.clientY,
+          };
+        });
+
+        piece.addEventListener("pointermove", (event) => {
+          if (!drag || drag.piece !== piece) return;
+          if (Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 3) drag.moved = true;
+          const box = stage.getBoundingClientRect();
+          const width = piece.offsetWidth;
+          const height = piece.offsetHeight;
+          const min = 48;
+          let x = event.clientX - box.left - drag.dx;
+          let y = event.clientY - box.top - drag.dy;
+          x = Math.min(Math.max(x, min - width), box.width - min);
+          y = Math.min(Math.max(y, min - height), box.height - min);
+          piece.style.left = `${(x / box.width) * 100}%`;
+          piece.style.top = `${(y / box.height) * 100}%`;
+          scheduleShadows(piece);
+        });
+
+        function endDrag() {
+          if (!drag || drag.piece !== piece) return;
+          piece.classList.remove("dragging");
+          const moved = drag.moved;
+          drag = null;
+          if (piece.id === "lamp" && !moved) {
+            setLamp(!piece.classList.contains("lit"));
+            return;
+          }
+          if (piece.id === "notebook" && !moved) {
+            window.location.href = "https://www.erica-hu.com";
+            return;
+          }
+          if (piece.id === "shelf" && !moved) {
+            toggleBooks();
+            return;
+          }
+          if (moved) copyLayout();
+        }
+
+        piece.addEventListener("pointerup", endDrag);
+        piece.addEventListener("pointercancel", endDrag);
+      }
+
+      const boxToggle = document.querySelector("#box-toggle");
+      const boxPanel = document.querySelector("#box-panel");
+      const pieceButtons = [...document.querySelectorAll("[data-piece]")];
+
+      function setPiece(id, on) {
+        const piece = document.getElementById(id);
+        if (!piece) return;
+        piece.classList.toggle("away", !on);
+        const button = pieceButtons.find((item) => item.dataset.piece === id);
+        if (button) button.setAttribute("aria-pressed", on ? "true" : "false");
+      }
+
+      function savePieces() {
+        const away = pieceButtons
+          .filter((button) => button.getAttribute("aria-pressed") !== "true")
+          .map((button) => button.dataset.piece);
+        try {
+          localStorage.setItem("casa-away", away.join(","));
+        } catch (error) {}
+      }
+
+      boxToggle.addEventListener("click", () => {
+        const open = boxToggle.getAttribute("aria-expanded") === "true";
+        boxToggle.setAttribute("aria-expanded", open ? "false" : "true");
+        boxPanel.hidden = open;
+      });
+
+      for (const button of pieceButtons) {
+        button.addEventListener("click", () => {
+          const on = button.getAttribute("aria-pressed") !== "true";
+          setPiece(button.dataset.piece, on);
+          savePieces();
+        });
+      }
+
+      try {
+        const stored = localStorage.getItem("casa-away");
+        if (stored !== null) {
+          const away = new Set(stored.split(",").filter(Boolean));
+          for (const button of pieceButtons) {
+            setPiece(button.dataset.piece, !away.has(button.dataset.piece));
+          }
+        }
+      } catch (error) {}
+
+      const books = document.querySelector("#books");
+      const booksList = document.querySelector("#books-list");
+      const booksCount = document.querySelector("#books-count");
+      const booksFind = document.querySelector("#books-find");
+      const booksClose = document.querySelector("#books-close");
+      const shelfButtons = [...document.querySelectorAll(".books-filters button")];
+      const shelfPiece = document.getElementById("shelf");
+      let library = null;
+      let starFilter = "all";
+
+      function bookStars(rating) {
+        return "★".repeat(rating);
+      }
+
+      function drawBooks() {
+        const query = booksFind.value.trim().toLowerCase();
+        const matches = (library || []).filter((book) => {
+          const rating = book.r || 0;
+          if (rating < 4) return false;
+          if (starFilter !== "all" && String(rating) !== starFilter) return false;
+          if (!query) return true;
+          return `${book.t} ${book.a}`.toLowerCase().includes(query);
+        });
+        booksCount.textContent = matches.length === 1 ? "1 book" : `${matches.length.toLocaleString()} books`;
+        const fragment = document.createDocumentFragment();
+        for (const book of matches) {
+          const item = document.createElement("li");
+          const title = document.createElement("p");
+          title.className = "book-title";
+          title.textContent = book.t;
+          const by = document.createElement("p");
+          by.className = "book-by";
+          by.textContent = book.a;
+          const meta = document.createElement("p");
+          meta.className = "book-meta";
+          meta.textContent = bookStars(book.r);
+          item.append(title, by, meta);
+          fragment.append(item);
+        }
+        booksList.replaceChildren(fragment);
+      }
+
+      async function openBooks() {
+        books.hidden = false;
+        if (!library) {
+          booksCount.textContent = "Opening the shelf...";
+          booksList.replaceChildren();
+          try {
+            const response = await fetch("/art/casa-books.json?v=2");
+            if (!response.ok) throw new Error("shelf");
+            library = await response.json();
+          } catch (error) {
+            booksCount.textContent = "The shelf did not open.";
+            return;
+          }
+        }
+        drawBooks();
+        booksFind.focus();
+      }
+
+      function closeBooks() {
+        books.hidden = true;
+        shelfPiece.focus();
+      }
+
+      function toggleBooks() {
+        if (books.hidden) openBooks();
+        else closeBooks();
+      }
+
+      shelfPiece.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        toggleBooks();
+      });
+
+      document.getElementById("notebook").addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        window.location.href = "https://www.erica-hu.com";
+      });
+
+      booksClose.addEventListener("click", closeBooks);
+      books.addEventListener("click", (event) => {
+        if (event.target === books) closeBooks();
+      });
+      booksFind.addEventListener("input", () => {
+        if (library) drawBooks();
+      });
+      for (const button of shelfButtons) {
+        button.addEventListener("click", () => {
+          starFilter = button.dataset.stars;
+          for (const item of shelfButtons) {
+            item.setAttribute("aria-pressed", item === button ? "true" : "false");
+          }
+          if (library) drawBooks();
+        });
+      }
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !books.hidden) closeBooks();
+      });
+
+      const room = document.querySelector(".room");
+      let viewX = null;
+      let viewDrag = null;
+
+      function handheld() {
+        return Math.min(window.innerWidth, window.innerHeight) <= 820;
+      }
+
+      function placeStage() {
+        if (!handheld()) {
+          stage.style.left = "";
+          stage.style.top = "";
+          stage.style.width = "";
+          stage.style.height = "";
+          stage.style.transform = "";
+          return;
+        }
+        const w = room.clientWidth;
+        const h = room.clientHeight;
+        const horizontal = w >= h;
+        let stageW;
+        let stageH;
+        let x;
+        let y;
+        if (horizontal) {
+          const scale = Math.min(w / 16, h / 9);
+          stageW = scale * 16;
+          stageH = scale * 9;
+          x = (w - stageW) / 2;
+          y = (h - stageH) / 2;
+        } else {
+          stageH = h;
+          stageW = (h * 16) / 9;
+          y = 0;
+          const min = Math.min(0, w - stageW);
+          if (viewX == null) viewX = (w - stageW) / 2;
+          viewX = Math.min(0, Math.max(min, viewX));
+          x = viewX;
+        }
+        stage.style.left = "0px";
+        stage.style.top = "0px";
+        stage.style.width = `${stageW}px`;
+        stage.style.height = `${stageH}px`;
+        stage.style.transform = `translate(${x}px, ${y}px)`;
+      }
+
+      room.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0 || !handheld() || room.clientWidth >= room.clientHeight) return;
+        if (event.target.closest(".piece")) return;
+        viewDrag = { id: event.pointerId, x: event.clientX, start: viewX };
+        try {
+          room.setPointerCapture(event.pointerId);
+        } catch (error) {}
+      });
+
+      room.addEventListener("pointermove", (event) => {
+        if (!viewDrag || viewDrag.id !== event.pointerId) return;
+        viewX = viewDrag.start + (event.clientX - viewDrag.x);
+        placeStage();
+      });
+
+      function endView(event) {
+        if (!viewDrag || viewDrag.id !== event.pointerId) return;
+        viewDrag = null;
+      }
+
+      room.addEventListener("pointerup", endView);
+      room.addEventListener("pointercancel", endView);
+
+      function layoutRoom() {
+        placeStage();
+        castShadows();
+      }
+
+      layoutRoom();
+      window.addEventListener("resize", layoutRoom);
+      window.addEventListener("load", layoutRoom);
+    </script>
   </body>
 </html>
