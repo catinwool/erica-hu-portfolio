@@ -33,7 +33,24 @@
           "value": "casa.erica-hu.com"
         }
       ],
-      "dest": "/casa/index.html"
+      "dest": "/casa/index.html",
+      "override": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "casa.erica-hu.com"
+        }
+      ],
+      "destination": "/casa/index.html"
+    },
+    {
+      "source": "/",
+      "destination": "/home.html"
     }
   ]
 }
