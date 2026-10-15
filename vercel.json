@@ -2,7 +2,7 @@
   "cleanUrls": true,
   "redirects": [
     {
-      "source": "/:path+",
+      "source": "/:path((?!api/).*)",
       "has": [
         {
           "type": "host",
