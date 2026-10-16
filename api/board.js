@@ -49,6 +49,39 @@ function id() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
 
+function isBlobUrl(value) {
+  try {
+    const url = new URL(String(value || ""));
+    return url.protocol === "https:" && url.hostname.endsWith(".blob.vercel-storage.com");
+  } catch {
+    return false;
+  }
+}
+
+function sniffImage(buf) {
+  if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return "image/jpeg";
+  if (buf.length >= 8 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return "image/png";
+  if (buf.length >= 6 && (buf.slice(0, 6).toString("ascii") === "GIF87a" || buf.slice(0, 6).toString("ascii") === "GIF89a")) {
+    return "image/gif";
+  }
+  if (buf.length >= 12 && buf.slice(0, 4).toString("ascii") === "RIFF" && buf.slice(8, 12).toString("ascii") === "WEBP") {
+    return "image/webp";
+  }
+  return "";
+}
+
+function readImage(value) {
+  if (value == null || value === "") return null;
+  if (typeof value !== "string") return false;
+  const match = value.match(/^data:image\/(?:jpeg|jpg|png|webp|gif);base64,([a-z0-9+/=\s]+)$/i);
+  if (!match) return false;
+  const buf = Buffer.from(match[1].replace(/\s+/g, ""), "base64");
+  if (!buf.length || buf.length > 1200000) return false;
+  const type = sniffImage(buf);
+  if (!type) return false;
+  return { buf, type };
+}
+
 function cleanLink(value) {
   const raw = clean(value, 200);
   if (!raw) return "";
@@ -73,7 +106,7 @@ async function readJson(req) {
     raw = raw.toString("utf8");
   }
   if (typeof raw === "string") {
-    if (raw.length > 4000) {
+    if (raw.length > 2500000) {
       const error = new Error("large");
       error.status = 413;
       throw error;
@@ -84,10 +117,30 @@ async function readJson(req) {
   return raw;
 }
 
-async function blobRead() {
+function tokenFrom(req) {
+  const header = req && req.headers && req.headers["x-vercel-oidc-token"];
+  const value = Array.isArray(header) ? header[0] : header;
+  return String(value || process.env.VERCEL_OIDC_TOKEN || "").trim();
+}
+
+function blobAuth(token) {
+  const auth = {};
+  const storeId = String(process.env.BLOB_STORE_ID || "").trim();
+  if (token) auth.oidcToken = token;
+  if (storeId) auth.storeId = storeId;
+  return auth;
+}
+
+async function blobRead(token) {
   const { get } = require("@vercel/blob");
-  const result = await get(PATH, { access: "private", useCache: false });
-  if (!result || !result.stream) return empty();
+  const auth = blobAuth(token);
+  let result;
+  try {
+    result = await get(PATH, { access: "private", useCache: false, ...auth });
+  } catch (error) {
+    result = await get(PATH, { access: "public", useCache: false, ...auth });
+  }
+  if (!result || result.statusCode === 304 || !result.stream) return empty();
   const text = await new Response(result.stream).text();
   try {
     const data = JSON.parse(text);
@@ -100,24 +153,60 @@ async function blobRead() {
   }
 }
 
-async function blobWrite(data) {
+async function blobWrite(data, token) {
   const { put } = require("@vercel/blob");
-  await put(PATH, JSON.stringify(data), {
-    access: "private",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: "application/json",
-    cacheControlMaxAge: 60,
-  });
+  const auth = blobAuth(token);
+  const body = JSON.stringify(data);
+  try {
+    await put(PATH, body, {
+      access: "private",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "application/json",
+      cacheControlMaxAge: 60,
+      ...auth,
+    });
+  } catch (error) {
+    await put(PATH, body, {
+      access: "public",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "application/json",
+      cacheControlMaxAge: 60,
+      ...auth,
+    });
+  }
 }
 
-function createHandler({ readBoard, writeBoard }) {
+async function blobStoreImage(noteId, image, token) {
+  const { put } = require("@vercel/blob");
+  const ext = image.type.split("/")[1] === "jpeg" ? "jpg" : image.type.split("/")[1];
+  const saved = await put(`casa/notes/${noteId}.${ext}`, image.buf, {
+    access: "public",
+    addRandomSuffix: true,
+    contentType: image.type,
+    ...blobAuth(token),
+  });
+  if (!saved || !isBlobUrl(saved.url)) throw new Error("store");
+  return saved.url;
+}
+
+async function blobForgetImages(notes, token) {
+  const urls = notes.map((note) => note.image).filter(isBlobUrl);
+  if (!urls.length) return;
+  const { del } = require("@vercel/blob");
+  await del(urls, blobAuth(token));
+}
+
+function createHandler({ readBoard, writeBoard, storeImage, forgetImages }) {
   return async function handler(req, res) {
+    const token = tokenFrom(req);
     if (req.method === "GET") {
       try {
-        const board = await readBoard();
+        const board = await readBoard(token);
         send(res, 200, { notes: board.notes, books: board.books, ready: true });
-      } catch {
+      } catch (error) {
+        console.error("board read", error && error.message);
         send(res, 200, { notes: [], books: [], ready: false });
       }
       return;
@@ -148,8 +237,9 @@ function createHandler({ readBoard, writeBoard }) {
 
     let board;
     try {
-      board = await readBoard();
-    } catch {
+      board = await readBoard(token);
+    } catch (error) {
+      console.error("board read", error && error.message);
       send(res, 503, { error: "Not just now." });
       return;
     }
@@ -160,7 +250,12 @@ function createHandler({ readBoard, writeBoard }) {
       const text = clean(body.text, 240);
       const name = clean(body.name, 32);
       const linkRaw = clean(body.link, 200);
-      if (text.length < 1) {
+      const image = readImage(body.image);
+      if (image === false) {
+        send(res, 400, { error: "That picture doesn't open." });
+        return;
+      }
+      if (!text && !image) {
         send(res, 400, { error: "The note is empty." });
         return;
       }
@@ -169,15 +264,39 @@ function createHandler({ readBoard, writeBoard }) {
         send(res, 400, { error: "That link doesn't open." });
         return;
       }
-      const duplicate = board.notes.some((note) => clean(note.text, 240).toLowerCase() === text.toLowerCase());
+      const duplicate = text && board.notes.some((note) => clean(note.text, 240).toLowerCase() === text.toLowerCase());
       if (duplicate) {
         send(res, 400, { error: "That's already on the board." });
         return;
       }
       const note = { id: id(), name, text, at: new Date().toISOString() };
       if (link) note.link = link;
+      if (image) {
+        try {
+          note.image = await storeImage(note.id, image, token);
+        } catch (error) {
+          console.error("board image", error && error.message);
+          send(res, 503, { error: "Not just now." });
+          return;
+        }
+      }
       board.notes.unshift(note);
+      const dropped = board.notes.slice(MAX_NOTES);
       board.notes = board.notes.slice(0, MAX_NOTES);
+      try {
+        await writeBoard(board, token);
+      } catch (error) {
+        console.error("board write", error && error.message);
+        send(res, 503, { error: "Not just now." });
+        return;
+      }
+      if (dropped.length && forgetImages) {
+        try {
+          await forgetImages(dropped, token);
+        } catch {}
+      }
+      send(res, 200, { ok: true, notes: board.notes, books: board.books });
+      return;
     } else if (kind === "book") {
       const title = clean(body.title, 80);
       const author = clean(body.author, 60);
@@ -204,8 +323,9 @@ function createHandler({ readBoard, writeBoard }) {
     }
 
     try {
-      await writeBoard(board);
-    } catch {
+      await writeBoard(board, token);
+    } catch (error) {
+      console.error("board write", error && error.message);
       send(res, 503, { error: "Not just now." });
       return;
     }
@@ -214,5 +334,10 @@ function createHandler({ readBoard, writeBoard }) {
   };
 }
 
-module.exports = createHandler({ readBoard: blobRead, writeBoard: blobWrite });
+module.exports = createHandler({
+  readBoard: blobRead,
+  writeBoard: blobWrite,
+  storeImage: blobStoreImage,
+  forgetImages: blobForgetImages,
+});
 module.exports.createHandler = createHandler;
