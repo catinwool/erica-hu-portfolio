@@ -51,7 +51,6 @@
 
       .piece {
         height: auto;
-        cursor: grab;
         touch-action: none;
       }
 
@@ -62,7 +61,108 @@
 
       .piece.dragging {
         z-index: 12;
-        cursor: grabbing;
+      }
+
+      input,
+      textarea {
+        cursor: text;
+      }
+
+      .casa-cursor {
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 40;
+        width: 0;
+        height: 0;
+        pointer-events: none;
+        overflow: visible;
+      }
+
+      .casa-cursor[hidden] {
+        display: none;
+      }
+
+      .casa-cursor-glow {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 240px;
+        height: 240px;
+        transform: translate(-50%, -50%);
+        background: radial-gradient(
+          circle,
+          rgba(255, 232, 190, 0.95) 0%,
+          rgba(255, 190, 90, 0.42) 16%,
+          rgba(255, 160, 50, 0.14) 36%,
+          rgba(255, 150, 40, 0.04) 54%,
+          transparent 68%
+        );
+        opacity: 0.8;
+      }
+
+      .casa-cursor.lit .casa-cursor-glow {
+        animation: cursor-glow 1.35s ease-in-out infinite;
+      }
+
+      @keyframes cursor-glow {
+        0%,
+        100% {
+          transform: translate(-50%, -50%) scale(0.78);
+          opacity: 0.45;
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.16);
+          opacity: 1;
+        }
+      }
+
+      .casa-cursor img {
+        position: absolute;
+        width: 22px;
+        height: auto;
+        left: 0;
+        top: 0;
+        transform: translate(-50%, -27%);
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+
+      .casa-cursor .cursor-on {
+        opacity: 0;
+      }
+
+      .casa-cursor.lit .cursor-off {
+        opacity: 0;
+      }
+
+      .casa-cursor.lit .cursor-on {
+        opacity: 1;
+      }
+
+      @media (hover: hover) and (pointer: fine) {
+        html.has-cursor,
+        html.has-cursor body,
+        html.has-cursor .piece,
+        html.has-cursor button,
+        html.has-cursor a,
+        html.has-cursor [role="button"],
+        html.has-cursor [role="link"] {
+          cursor: none;
+        }
+
+        html.has-cursor input,
+        html.has-cursor textarea {
+          cursor: text;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .casa-cursor.lit .casa-cursor-glow {
+          animation: none;
+          transform: translate(-50%, -50%) scale(1);
+          opacity: 1;
+        }
       }
 
       #window {
@@ -88,8 +188,8 @@
 
       #board {
         z-index: 3;
-        left: 56.5%;
-        top: 11%;
+        left: 54.5%;
+        top: 9.7%;
         width: 20%;
       }
 
@@ -102,8 +202,8 @@
 
       #vinyl {
         z-index: 5;
-        left: 81.3%;
-        top: 74.3%;
+        left: 81%;
+        top: 74.8%;
         width: 21%;
       }
 
@@ -144,8 +244,8 @@
 
       #lamp {
         z-index: 8;
-        left: 36%;
-        top: 57%;
+        left: 31.8%;
+        top: 61%;
         width: 12%;
       }
 
@@ -215,29 +315,29 @@
 
       #couch {
         z-index: 9;
-        left: 47.4%;
-        top: 48.7%;
+        left: 46.5%;
+        top: 46.9%;
         width: 34%;
       }
 
       #throw {
         z-index: 10;
-        left: 48.2%;
-        top: 49.8%;
+        left: 47.9%;
+        top: 49.2%;
         width: 13%;
       }
 
       #green {
         z-index: 10;
-        left: 64.9%;
-        top: 49.3%;
+        left: 64.4%;
+        top: 47.6%;
         width: 8%;
       }
 
       #purple {
         z-index: 10;
-        left: 68.3%;
-        top: 51.2%;
+        left: 67.2%;
+        top: 50%;
         width: 8%;
       }
 
@@ -250,51 +350,56 @@
 
       #coaster {
         z-index: 11;
-        left: 69.8%;
-        top: 76%;
+        left: 68.2%;
+        top: 74.2%;
         width: 7.2%;
       }
 
       #sakura {
         z-index: 11;
-        left: 48%;
-        top: 0%;
+        left: 74%;
+        top: -7.5%;
         width: 10.5%;
       }
 
       #vine {
         z-index: 11;
         left: 0.8%;
-        top: 0%;
+        top: -0.7%;
         width: 8.5%;
       }
 
       #leaf {
         z-index: 7;
-        left: 74%;
-        top: 44%;
+        left: 42.4%;
+        top: 49.2%;
         width: 8%;
       }
 
       #pot {
         z-index: 11;
-        left: 69.5%;
-        top: 80%;
+        left: 73.7%;
+        top: 64.5%;
         width: 8%;
       }
 
+      #board:focus,
       #shelf:focus,
-      #notebook:focus {
+      #notebook:focus,
+      #macbook:focus {
         outline: none;
       }
 
+      #board:focus-visible,
       #shelf:focus-visible,
-      #notebook:focus-visible {
+      #notebook:focus-visible,
+      #macbook:focus-visible {
         outline: 2px solid #243044;
         outline-offset: 4px;
       }
 
-      .books {
+      .books,
+      .notes {
         position: fixed;
         inset: 0;
         z-index: 20;
@@ -307,11 +412,13 @@
         color: #243044;
       }
 
-      .books[hidden] {
+      .books[hidden],
+      .notes[hidden] {
         display: none;
       }
 
-      .books-card {
+      .books-card,
+      .notes-card {
         width: min(520px, 100%);
         max-height: min(78vh, 720px);
         display: flex;
@@ -321,7 +428,8 @@
         box-shadow: 8px 10px 0 rgba(36, 48, 68, 0.18);
       }
 
-      .books-head {
+      .books-head,
+      .notes-head {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -329,24 +437,192 @@
         padding: 14px 16px 8px;
       }
 
-      .books-head h2 {
+      .books-head h2,
+      .notes-head h2 {
         margin: 0;
         font-size: 22px;
         font-weight: normal;
       }
 
       .books-head button,
-      .books-filters button {
+      .books-filters button,
+      .notes-close,
+      .notes-form button {
         font: inherit;
         color: inherit;
         background: transparent;
         border: 2px solid transparent;
-        cursor: pointer;
       }
 
-      .books-head button {
+      .books-head button,
+      .notes-close,
+      .notes-form button {
         padding: 4px 8px;
         border-color: #243044;
+      }
+
+      .notes {
+        align-items: stretch;
+        justify-content: flex-start;
+        padding: 0;
+      }
+
+      .notes-card {
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+      }
+
+      .notes-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 2;
+        background: #fffdf6;
+      }
+
+      .notes-board {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px 16px 12px;
+      }
+
+      .notes-surface {
+        position: relative;
+        height: 100%;
+        max-height: 100%;
+        max-width: 100%;
+        aspect-ratio: 829 / 792;
+      }
+
+      .notes-surface img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      .notes-form {
+        flex: none;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+        background: #fffdf6;
+        border-top: 3px solid #243044;
+      }
+
+      .notes-form textarea,
+      .notes-form input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 8px 10px;
+        border: 2px solid #243044;
+        background: #fff;
+        font: inherit;
+        color: inherit;
+      }
+
+      .notes-form textarea {
+        min-height: 76px;
+        resize: vertical;
+      }
+
+      .notes-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .notes-row input {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .notes-form button {
+        background: #fffdf6;
+        padding: 8px 12px;
+      }
+
+      .notes-status {
+        margin: 0;
+        min-height: 1.2em;
+        font-size: 14px;
+        color: #5c4a3a;
+      }
+
+      .notes-honey {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        border: 0;
+      }
+
+      .notes-list {
+        position: absolute;
+        left: 7%;
+        right: 7%;
+        top: 38%;
+        bottom: 7%;
+        margin: 0;
+        padding: 4px;
+        list-style: none;
+        overflow: auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-content: flex-start;
+      }
+
+      .notes-list li {
+        width: calc(50% - 5px);
+        box-sizing: border-box;
+        margin: 0;
+        padding: 10px 12px 12px;
+        background: #fff8ea;
+        border: 1px solid rgba(36, 48, 68, 0.16);
+        box-shadow: 2px 3px 0 rgba(36, 48, 68, 0.08);
+      }
+
+      .notes-list li:nth-child(3n + 2) {
+        background: #fde8ef;
+        transform: rotate(-0.5deg);
+      }
+
+      .notes-list li:nth-child(3n) {
+        background: #e7f6f2;
+        transform: rotate(0.4deg);
+      }
+
+      .note-text {
+        margin: 0;
+        font-size: 15px;
+      }
+
+      .note-by {
+        margin: 8px 0 0;
+        font-size: 13px;
+        color: #5c4a3a;
+      }
+
+      .note-by a {
+        color: #243044;
+      }
+
+      @media (max-width: 420px) {
+        .notes-list li {
+          width: 100%;
+        }
       }
 
       .books-tools {
@@ -397,8 +673,31 @@
       }
 
       .books-list li {
+        display: flex;
+        align-items: center;
+        gap: 12px;
         padding: 10px 0;
         border-top: 1px solid rgba(36, 48, 68, 0.12);
+      }
+
+      .book-cover {
+        width: 46px;
+        height: 68px;
+        flex: none;
+        background: #f4ead7;
+        border: 1px solid rgba(36, 48, 68, 0.16);
+        overflow: hidden;
+      }
+
+      .book-cover img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .books-list li > div {
+        min-width: 0;
       }
 
       .books-list p {
@@ -409,8 +708,7 @@
         font-size: 16px;
       }
 
-      .book-by,
-      .book-meta {
+      .book-by {
         font-size: 14px;
         color: #5c4a3a;
       }
@@ -441,7 +739,6 @@
         padding: 0;
         border: 2px solid #fffdf6;
         border-radius: 50%;
-        cursor: pointer;
       }
 
       .walls button[aria-pressed="true"] {
@@ -476,11 +773,16 @@
         color: #243044;
       }
 
+      @media (max-width: 820px), (max-height: 820px) {
+        .box {
+          display: none;
+        }
+      }
+
       .box > button {
         padding: 0;
         border: 0;
         background: transparent;
-        cursor: pointer;
         line-height: 0;
       }
 
@@ -535,7 +837,6 @@
         background: transparent;
         border: 0;
         border-radius: 6px;
-        cursor: pointer;
         opacity: 0.4;
       }
 
@@ -568,7 +869,7 @@
         <img id="rug" class="piece away" src="/art/casa-rug.png" alt="A yellow floral rug." />
         <img id="garden" class="piece" src="/art/casa-garden-rug.png?v=3" alt="A garden rug with trees, animals, and flowers." />
         <img id="window" class="piece" src="/art/casa-window.png" alt="An open window onto a garden." />
-        <img id="board" class="piece" src="/art/casa-board.png?v=3" alt="A linen board with notes, photos, and dried flowers." />
+        <img id="board" class="piece" src="/art/casa-board.png?v=3" alt="" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="notes" aria-label="Board" />
         <img id="shelf" class="piece" src="/art/casa-shelf.png" alt="" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="books" aria-label="Bookshelf" />
         <img id="vinyl" class="piece" src="/art/casa-vinyl.png" alt="A record player." />
         <img
@@ -580,7 +881,7 @@
         <img id="glass" class="piece" src="/art/casa-glass.png?v=1" alt="A glass of daisies and tulips." />
         <img id="notebook" class="piece" src="/art/casa-notebook.png?v=2" alt="" role="link" tabindex="0" aria-label="Notebook, erica-hu.com" />
         <img id="pen" class="piece" src="/art/casa-pen.png?v=2" alt="A turquoise pen." />
-        <img id="macbook" class="piece" src="/art/casa-macbook.png?v=1" alt="An open laptop." />
+        <img id="macbook" class="piece" src="/art/casa-macbook.png?v=2" alt="" role="link" tabindex="0" aria-label="Laptop, gliahq.com" />
         <div id="lamp" class="piece" role="button" tabindex="0" aria-pressed="false" aria-label="Mushroom lamp">
           <img class="lamp-off" src="/art/casa-lamp.png?v=3" alt="" />
           <img class="lamp-on" src="/art/casa-lamp-on.png?v=3" alt="" />
@@ -589,7 +890,7 @@
         <img id="couch" class="piece" src="/art/casa-couch.png" alt="A yellow couch." />
         <img id="throw" class="piece" src="/art/casa-throw.png?v=2" alt="A quilted throw blanket." />
         <img id="green" class="piece" src="/art/casa-cushion-green.png?v=1" alt="A green cushion." />
-        <img id="purple" class="piece" src="/art/casa-cushion-purple.png?v=1" alt="A purple cushion with a blue ribbon." />
+        <img id="purple" class="piece" src="/art/casa-cushion-purple.png?v=2" alt="A purple cushion." />
         <img id="table" class="piece" src="/art/casa-table.png?v=3" alt="A round wooden coffee table." />
         <img id="coaster" class="piece" src="/art/casa-coaster.png?v=1" alt="A rattan coaster." />
         <img id="sakura" class="piece" src="/art/casa-sakura.png?v=7" alt="A sakura paper lantern." />
@@ -622,7 +923,7 @@
         <li><button type="button" data-piece="glass" aria-pressed="true" aria-label="Glass"><img src="/art/casa-glass.png?v=1" alt="" /></button></li>
         <li><button type="button" data-piece="notebook" aria-pressed="true" aria-label="Notebook"><img src="/art/casa-notebook.png?v=2" alt="" /></button></li>
         <li><button type="button" data-piece="pen" aria-pressed="true" aria-label="Pen"><img src="/art/casa-pen.png?v=2" alt="" /></button></li>
-        <li><button type="button" data-piece="macbook" aria-pressed="true" aria-label="MacBook"><img src="/art/casa-macbook.png?v=1" alt="" /></button></li>
+        <li><button type="button" data-piece="macbook" aria-pressed="true" aria-label="MacBook"><img src="/art/casa-macbook.png?v=2" alt="" /></button></li>
         <li><button type="button" data-piece="lamp" aria-pressed="true" aria-label="Lamp"><img src="/art/casa-lamp.png?v=3" alt="" /></button></li>
         <li><button type="button" data-piece="sakura" aria-pressed="true" aria-label="Sakura light"><img src="/art/casa-sakura.png?v=7" alt="" /></button></li>
         <li><button type="button" data-piece="vine" aria-pressed="true" aria-label="Hanging plant"><img src="/art/casa-vine.png?v=1" alt="" /></button></li>
@@ -632,7 +933,7 @@
         <li><button type="button" data-piece="couch" aria-pressed="true" aria-label="Couch"><img src="/art/casa-couch.png" alt="" /></button></li>
         <li><button type="button" data-piece="throw" aria-pressed="true" aria-label="Throw"><img src="/art/casa-throw.png?v=2" alt="" /></button></li>
         <li><button type="button" data-piece="green" aria-pressed="true" aria-label="Green cushion"><img src="/art/casa-cushion-green.png?v=1" alt="" /></button></li>
-        <li><button type="button" data-piece="purple" aria-pressed="true" aria-label="Purple cushion"><img src="/art/casa-cushion-purple.png?v=1" alt="" /></button></li>
+        <li><button type="button" data-piece="purple" aria-pressed="true" aria-label="Purple cushion"><img src="/art/casa-cushion-purple.png?v=2" alt="" /></button></li>
         <li><button type="button" data-piece="table" aria-pressed="true" aria-label="Coffee table"><img src="/art/casa-table.png?v=3" alt="" /></button></li>
         <li><button type="button" data-piece="coaster" aria-pressed="true" aria-label="Coaster"><img src="/art/casa-coaster.png?v=1" alt="" /></button></li>
         <li><button type="button" data-piece="rug" aria-pressed="false" aria-label="Yellow rug"><img src="/art/casa-rug.png" alt="" /></button></li>
@@ -648,15 +949,44 @@
         </div>
         <div class="books-tools">
           <input id="books-find" type="search" placeholder="Find a book" aria-label="Find a book" />
-          <div class="books-filters" role="group" aria-label="Stars">
-            <button type="button" data-stars="all" aria-pressed="true">All</button>
-            <button type="button" data-stars="5" aria-pressed="false">5 stars</button>
-            <button type="button" data-stars="4" aria-pressed="false">4 stars</button>
+          <div class="books-filters" role="group" aria-label="Shelves">
+            <button type="button" data-shelf="favorite" aria-pressed="true">Favorites</button>
+            <button type="button" data-shelf="loved" aria-pressed="false">Loved</button>
+            <button type="button" data-shelf="reading" aria-pressed="false">Currently reading</button>
           </div>
         </div>
         <p class="books-count" id="books-count"></p>
         <ul class="books-list" id="books-list"></ul>
       </div>
+    </div>
+    <div class="notes" id="notes" hidden>
+      <div class="notes-card" role="dialog" aria-modal="true" aria-label="Board">
+        <button type="button" id="notes-close" class="notes-close">Close</button>
+        <div class="notes-board">
+          <div class="notes-surface">
+            <img src="/art/casa-board.png?v=3" alt="" />
+            <ul class="notes-list" id="notes-list"></ul>
+          </div>
+        </div>
+        <form class="notes-form" id="notes-form">
+          <div class="notes-honey" aria-hidden="true">
+            <label for="notes-company">Company</label>
+            <input id="notes-company" name="company" tabindex="-1" autocomplete="off" />
+          </div>
+          <textarea id="notes-text" name="text" maxlength="240" required placeholder="leave a note for erica :)" aria-label="leave a note for erica :)"></textarea>
+          <div class="notes-row">
+            <input id="notes-name" name="name" type="text" maxlength="32" placeholder="Your name" aria-label="Your name" />
+            <input id="notes-link" name="link" type="text" maxlength="200" placeholder="A link" aria-label="A link" inputmode="url" />
+            <button type="submit">Pin it</button>
+          </div>
+          <p class="notes-status" id="notes-status" role="status"></p>
+        </form>
+      </div>
+    </div>
+    <div class="casa-cursor" id="casa-cursor" hidden>
+      <span class="casa-cursor-glow"></span>
+      <img class="cursor-off" src="/art/casa-lamp.png?v=3" alt="" />
+      <img class="cursor-on" src="/art/casa-lamp-on.png?v=3" alt="" />
     </div>
     <script>
       const walls = {
@@ -860,6 +1190,22 @@
       for (const piece of pieces) {
         piece.addEventListener("pointerdown", (event) => {
           if (event.button !== 0 || piece.classList.contains("away")) return;
+          if (handheld()) {
+            drag = {
+              piece,
+              moved: false,
+              x: event.clientX,
+              y: event.clientY,
+              mobile: true,
+            };
+            if (room.clientWidth < room.clientHeight) {
+              viewDrag = { id: event.pointerId, x: event.clientX, start: viewX };
+            }
+            try {
+              piece.setPointerCapture(event.pointerId);
+            } catch (error) {}
+            return;
+          }
           const box = stage.getBoundingClientRect();
           const rect = piece.getBoundingClientRect();
           piece.style.left = `${((rect.left - box.left) / box.width) * 100}%`;
@@ -882,6 +1228,14 @@
 
         piece.addEventListener("pointermove", (event) => {
           if (!drag || drag.piece !== piece) return;
+          if (drag.mobile) {
+            if (Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 3) drag.moved = true;
+            if (viewDrag && viewDrag.id === event.pointerId) {
+              viewX = viewDrag.start + (event.clientX - viewDrag.x);
+              placeStage();
+            }
+            return;
+          }
           if (Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 3) drag.moved = true;
           const box = stage.getBoundingClientRect();
           const width = piece.offsetWidth;
@@ -896,11 +1250,13 @@
           scheduleShadows(piece);
         });
 
-        function endDrag() {
+        function endDrag(event) {
           if (!drag || drag.piece !== piece) return;
           piece.classList.remove("dragging");
           const moved = drag.moved;
+          const mobile = drag.mobile;
           drag = null;
+          if (viewDrag && event && viewDrag.id === event.pointerId) viewDrag = null;
           if (piece.id === "lamp" && !moved) {
             setLamp(!piece.classList.contains("lit"));
             return;
@@ -909,11 +1265,19 @@
             window.location.href = "https://www.erica-hu.com";
             return;
           }
+          if (piece.id === "macbook" && !moved) {
+            window.location.href = "https://www.gliahq.com";
+            return;
+          }
           if (piece.id === "shelf" && !moved) {
             toggleBooks();
             return;
           }
-          if (moved) copyLayout();
+          if (piece.id === "board" && !moved) {
+            toggleNotes();
+            return;
+          }
+          if (moved && !mobile) copyLayout();
         }
 
         piece.addEventListener("pointerup", endDrag);
@@ -973,35 +1337,49 @@
       const shelfButtons = [...document.querySelectorAll(".books-filters button")];
       const shelfPiece = document.getElementById("shelf");
       let library = null;
-      let starFilter = "all";
+      let shelfFilter = "favorite";
 
-      function bookStars(rating) {
-        return "★".repeat(rating);
+      function coverSrc(book) {
+        if (book.c) return `https://covers.openlibrary.org/b/id/${book.c}-M.jpg?default=false`;
+        if (book.i) return `https://covers.openlibrary.org/b/isbn/${book.i}-M.jpg?default=false`;
+        return "";
       }
 
       function drawBooks() {
         const query = booksFind.value.trim().toLowerCase();
         const matches = (library || []).filter((book) => {
-          const rating = book.r || 0;
-          if (rating < 4) return false;
-          if (starFilter !== "all" && String(rating) !== starFilter) return false;
+          if (shelfFilter === "favorite" && !book.f) return false;
+          if (shelfFilter === "loved" && (book.r || 0) < 4) return false;
+          if (shelfFilter === "reading" && !book.n) return false;
           if (!query) return true;
           return `${book.t} ${book.a}`.toLowerCase().includes(query);
         });
-        booksCount.textContent = matches.length === 1 ? "1 book" : `${matches.length.toLocaleString()} books`;
+        booksCount.textContent =
+          matches.length === 0 ? "No books" : matches.length === 1 ? "1 book" : `${matches.length.toLocaleString()} books`;
         const fragment = document.createDocumentFragment();
         for (const book of matches) {
           const item = document.createElement("li");
+          const cover = document.createElement("span");
+          cover.className = "book-cover";
+          const src = coverSrc(book);
+          if (src) {
+            const img = document.createElement("img");
+            img.alt = "";
+            img.loading = "lazy";
+            img.decoding = "async";
+            img.addEventListener("error", () => img.remove());
+            img.src = src;
+            cover.append(img);
+          }
+          const copy = document.createElement("div");
           const title = document.createElement("p");
           title.className = "book-title";
           title.textContent = book.t;
           const by = document.createElement("p");
           by.className = "book-by";
           by.textContent = book.a;
-          const meta = document.createElement("p");
-          meta.className = "book-meta";
-          meta.textContent = bookStars(book.r);
-          item.append(title, by, meta);
+          copy.append(title, by);
+          item.append(cover, copy);
           fragment.append(item);
         }
         booksList.replaceChildren(fragment);
@@ -1013,7 +1391,7 @@
           booksCount.textContent = "Opening the shelf...";
           booksList.replaceChildren();
           try {
-            const response = await fetch("/art/casa-books.json?v=2");
+            const response = await fetch("/art/casa-books.json?v=3");
             if (!response.ok) throw new Error("shelf");
             library = await response.json();
           } catch (error) {
@@ -1047,6 +1425,12 @@
         window.location.href = "https://www.erica-hu.com";
       });
 
+      document.getElementById("macbook").addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        window.location.href = "https://www.gliahq.com";
+      });
+
       booksClose.addEventListener("click", closeBooks);
       books.addEventListener("click", (event) => {
         if (event.target === books) closeBooks();
@@ -1056,7 +1440,7 @@
       });
       for (const button of shelfButtons) {
         button.addEventListener("click", () => {
-          starFilter = button.dataset.stars;
+          shelfFilter = button.dataset.shelf;
           for (const item of shelfButtons) {
             item.setAttribute("aria-pressed", item === button ? "true" : "false");
           }
@@ -1064,7 +1448,138 @@
         });
       }
       document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && !books.hidden) closeBooks();
+        if (event.key !== "Escape") return;
+        if (!notes.hidden) closeNotes();
+        else if (!books.hidden) closeBooks();
+      });
+
+      const notes = document.querySelector("#notes");
+      const notesList = document.querySelector("#notes-list");
+      const notesForm = document.querySelector("#notes-form");
+      const notesText = document.querySelector("#notes-text");
+      const notesName = document.querySelector("#notes-name");
+      const notesLink = document.querySelector("#notes-link");
+      const notesStatus = document.querySelector("#notes-status");
+      const notesClose = document.querySelector("#notes-close");
+      const boardPiece = document.getElementById("board");
+      let boardNotes = null;
+
+      function safeLink(value) {
+        if (!value || !/^https?:\/\//i.test(value)) return "";
+        try {
+          const url = new URL(value);
+          if (url.protocol !== "http:" && url.protocol !== "https:") return "";
+          return url.href;
+        } catch (error) {
+          return "";
+        }
+      }
+
+      function drawNotes() {
+        const fragment = document.createDocumentFragment();
+        for (const note of boardNotes) {
+          const item = document.createElement("li");
+          const text = document.createElement("p");
+          text.className = "note-text";
+          text.textContent = note.text;
+          item.append(text);
+          const href = safeLink(note.link);
+          if (note.name || href) {
+            const by = document.createElement("p");
+            by.className = "note-by";
+            if (href) {
+              const link = document.createElement("a");
+              link.href = href;
+              link.target = "_blank";
+              link.rel = "noopener noreferrer";
+              link.textContent = note.name || href.replace(/^https?:\/\//, "").replace(/\/$/, "");
+              by.append(link);
+            } else {
+              by.textContent = note.name;
+            }
+            item.append(by);
+          }
+          fragment.append(item);
+        }
+        notesList.replaceChildren(fragment);
+      }
+
+      async function openNotes() {
+        notes.hidden = false;
+        notesStatus.textContent = "Opening the board...";
+        notesList.replaceChildren();
+        try {
+          const response = await fetch("/api/board");
+          if (!response.ok) throw new Error("board");
+          const data = await response.json();
+          if (data.ready === false) throw new Error("board");
+          boardNotes = Array.isArray(data.notes) ? data.notes : [];
+          notesStatus.textContent = "";
+          drawNotes();
+        } catch (error) {
+          boardNotes = null;
+          notesStatus.textContent = "The board did not open.";
+        }
+        notesText.focus();
+      }
+
+      function closeNotes() {
+        notes.hidden = true;
+        boardPiece.focus();
+      }
+
+      function toggleNotes() {
+        if (notes.hidden) openNotes();
+        else closeNotes();
+      }
+
+      boardPiece.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        toggleNotes();
+      });
+
+      notesClose.addEventListener("click", closeNotes);
+      notes.addEventListener("click", (event) => {
+        if (event.target === notes || event.target.classList.contains("notes-board") || event.target.classList.contains("notes-card")) {
+          closeNotes();
+        }
+      });
+      notesForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const text = notesText.value.trim();
+        if (!text || !boardNotes) return;
+        const button = notesForm.querySelector("button");
+        button.disabled = true;
+        notesStatus.textContent = "Pinning...";
+        try {
+          const response = await fetch("/api/board", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              kind: "note",
+              text,
+              name: notesName.value.trim(),
+              link: notesLink.value.trim(),
+              company: document.querySelector("#notes-company").value,
+            }),
+          });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            notesStatus.textContent = data.error || "That one didn't pin.";
+            return;
+          }
+          boardNotes = Array.isArray(data.notes) ? data.notes : boardNotes;
+          notesText.value = "";
+          notesName.value = "";
+          notesLink.value = "";
+          notesStatus.textContent = "Pinned.";
+          drawNotes();
+        } catch (error) {
+          notesStatus.textContent = "That one didn't pin.";
+        } finally {
+          button.disabled = false;
+        }
       });
 
       const room = document.querySelector(".room");
@@ -1144,6 +1659,27 @@
       layoutRoom();
       window.addEventListener("resize", layoutRoom);
       window.addEventListener("load", layoutRoom);
+
+      const casaCursor = document.querySelector("#casa-cursor");
+      const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+
+      function moveCursor(event) {
+        if (!finePointer.matches || event.pointerType === "touch") {
+          casaCursor.hidden = true;
+          document.documentElement.classList.remove("has-cursor");
+          return;
+        }
+        document.documentElement.classList.add("has-cursor");
+        const typing = event.target.closest("input, textarea");
+        casaCursor.hidden = Boolean(typing);
+        casaCursor.classList.toggle("lit", !typing && Boolean(event.target.closest("button, a, [role='button'], [role='link']")));
+        casaCursor.style.transform = `translate(${event.clientX}px, ${event.clientY}px)`;
+      }
+
+      window.addEventListener("pointermove", moveCursor);
+      document.documentElement.addEventListener("pointerleave", () => {
+        casaCursor.hidden = true;
+      });
     </script>
   </body>
 </html>

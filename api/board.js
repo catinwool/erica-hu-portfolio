@@ -49,6 +49,20 @@ function id() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
 
+function cleanLink(value) {
+  const raw = clean(value, 200);
+  if (!raw) return "";
+  const withScheme = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  try {
+    const url = new URL(withScheme);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return "";
+    if (!url.hostname || !url.hostname.includes(".")) return "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
 async function readJson(req) {
   let raw = req.body;
   if (raw == null) {
@@ -145,8 +159,14 @@ function createHandler({ readBoard, writeBoard }) {
     if (kind === "note") {
       const text = clean(body.text, 240);
       const name = clean(body.name, 32);
+      const linkRaw = clean(body.link, 200);
       if (text.length < 1) {
         send(res, 400, { error: "The note is empty." });
+        return;
+      }
+      const link = linkRaw ? cleanLink(linkRaw) : "";
+      if (linkRaw && !link) {
+        send(res, 400, { error: "That link doesn't open." });
         return;
       }
       const duplicate = board.notes.some((note) => clean(note.text, 240).toLowerCase() === text.toLowerCase());
@@ -154,7 +174,9 @@ function createHandler({ readBoard, writeBoard }) {
         send(res, 400, { error: "That's already on the board." });
         return;
       }
-      board.notes.unshift({ id: id(), name, text, at: new Date().toISOString() });
+      const note = { id: id(), name, text, at: new Date().toISOString() };
+      if (link) note.link = link;
+      board.notes.unshift(note);
       board.notes = board.notes.slice(0, MAX_NOTES);
     } else if (kind === "book") {
       const title = clean(body.title, 80);
