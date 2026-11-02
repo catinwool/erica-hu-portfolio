@@ -3,9 +3,6 @@
 const crypto = require("crypto");
 const fs = require("fs/promises");
 const path = require("path");
-const { parseHTML } = require("linkedom");
-const { Readability } = require("@mozilla/readability");
-
 const FILE = path.join(__dirname, "..", "bookmark", "library.json");
 const BLOB_PATH = "bookmark/library.json";
 const SESSION_SECONDS = 400 * 24 * 60 * 60;
@@ -839,7 +836,19 @@ function visitPiece(node, pageUrl, blocks, paragraphs) {
   for (const child of node.childNodes) visitPiece(child, pageUrl, blocks, paragraphs);
 }
 
-function blocksFrom(html, pageUrl) {
+let readerPromise;
+
+function reader() {
+  if (!readerPromise) {
+    readerPromise = Promise.all([import("linkedom"), import("@mozilla/readability")]).then(([dom, readability]) => {
+      const Readability = readability.Readability || (readability.default && readability.default.Readability) || readability.default;
+      return { parseHTML: dom.parseHTML, Readability };
+    });
+  }
+  return readerPromise;
+}
+
+function blocksFrom(html, pageUrl, parseHTML) {
   const { document } = parseHTML("<!doctype html><html><body></body></html>");
   document.body.innerHTML = html;
   const blocks = [];
@@ -883,7 +892,8 @@ async function readPage(target) {
   return { html, url: res.url || target };
 }
 
-function parsePiece(html, pageUrl) {
+async function parsePiece(html, pageUrl) {
+  const { parseHTML, Readability } = await reader();
   let document;
   try {
     document = parseHTML(html).document;
@@ -906,7 +916,7 @@ function parsePiece(html, pageUrl) {
     article = null;
   }
   if (!article || !article.content) fail(400, "That page didn't give up a piece.");
-  const piece = blocksFrom(article.content, pageUrl);
+  const piece = blocksFrom(article.content, pageUrl, parseHTML);
   if (hero && !piece.blocks.some((block) => block && block.image === hero.image)) piece.blocks.unshift(hero);
   const site = cleanText(article.siteName, 120) || siteName || hostnameOf(pageUrl);
   const title = titleFrom(article.title, site);
@@ -933,7 +943,7 @@ async function saveArticle(library, body) {
   const finalUrl = cleanUrl(page.url) || url;
   const again = library.articles.find((article) => article.url === finalUrl);
   if (again) return { article: again, duplicate: true };
-  const parsed = parsePiece(page.html, finalUrl);
+  const parsed = await parsePiece(page.html, finalUrl);
   const article = {
     id: uid(),
     title: parsed.title,
