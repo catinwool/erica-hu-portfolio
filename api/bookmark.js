@@ -111,9 +111,10 @@ function seed() {
   return JSON.parse(JSON.stringify(SEED));
 }
 
-function fail(status, error) {
+function fail(status, error, expose) {
   const err = new Error(error);
   err.status = status;
+  if (expose) err.expose = true;
   throw err;
 }
 
@@ -395,7 +396,13 @@ function secret() {
 }
 
 function mailReady() {
-  return Boolean(String(process.env.RESEND_API_KEY || "").trim());
+  return Boolean(String(process.env.RESEND_API_KEY || "").trim() && inbox());
+}
+
+function inbox() {
+  const to = String(process.env.BOOKMARK_EMAIL || "").trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return "";
+  return to;
 }
 
 function sign(payload) {
@@ -529,9 +536,9 @@ function allowed(req) {
 
 async function sendCode(code) {
   const key = String(process.env.RESEND_API_KEY || "").trim();
-  if (!key) return false;
+  const to = inbox();
+  if (!key || !to) return false;
   const from = String(process.env.BOOKMARK_FROM || "Bookmark <bookmark@erica-hu.com>").trim();
-  const to = String(process.env.BOOKMARK_EMAIL || "ericahu801@gmail.com").trim();
   let res;
   try {
     res = await fetch("https://api.resend.com/emails", {
@@ -1065,23 +1072,62 @@ function apply(library, body) {
   fail(400, "That doesn't fit on the shelf.");
 }
 
+const mailed = new Map();
+let mailWindow = { start: 0, count: 0 };
+
+function mailLimited(ip) {
+  const row = mailed.get(ip);
+  if (!row) return false;
+  if (Date.now() - row.start > 15 * 60 * 1000) {
+    mailed.delete(ip);
+    return false;
+  }
+  return row.count >= 3;
+}
+
+function markMail(ip) {
+  const now = Date.now();
+  const row = mailed.get(ip) || { count: 0, start: now };
+  if (now - row.start > 15 * 60 * 1000) {
+    row.count = 0;
+    row.start = now;
+  }
+  row.count += 1;
+  mailed.set(ip, row);
+  if (mailed.size > 500) mailed.delete(mailed.keys().next().value);
+  if (now - mailWindow.start > 60 * 60 * 1000) mailWindow = { start: now, count: 0 };
+  mailWindow.count += 1;
+}
+
+function mailFlooded() {
+  if (Date.now() - mailWindow.start > 60 * 60 * 1000) return false;
+  return mailWindow.count >= 6;
+}
+
+async function requestCode(req, res) {
+  const ip = clientIp(req);
+  if (tooMany(ip) || mailLimited(ip) || mailFlooded()) fail(429, "Too many tries. Wait a little.");
+  if (!mailReady()) fail(503, "The code couldn't be sent. Use the key for now.", true);
+  const code = String(crypto.randomInt(0, 1000000)).padStart(6, "0");
+  const sent = await sendCode(code);
+  if (!sent) fail(503, "The code couldn't be sent. Use the key for now.", true);
+  markMail(ip);
+  writeCookies(res, req, [{ name: "bookmark_step", value: issueStep(code), maxAge: 600 }]);
+  return send(res, 200, { ok: true, step: "code" });
+}
+
 async function unlock(req, res, body) {
   const key = password();
   if (!key) return send(res, 200, { ok: true });
   const ip = clientIp(req);
   if (tooMany(ip)) fail(429, "Too many tries. Wait a little.");
+  if (body && body.mail) return requestCode(req, res);
   if (!passwordMatches(body && body.password)) {
     markFail(ip);
     fail(401, "That isn't the key.");
   }
   markOk(ip);
-  if (mailReady()) {
-    const code = String(crypto.randomInt(0, 1000000)).padStart(6, "0");
-    const sent = await sendCode(code);
-    if (!sent) fail(503, "The code couldn't be sent. Try again in a moment.");
-    writeCookies(res, req, [{ name: "bookmark_step", value: issueStep(code), maxAge: 600 }]);
-    return send(res, 200, { ok: true, step: "code" });
-  }
+  if (mailReady()) return requestCode(req, res);
   writeCookies(res, req, [{ name: "bookmark", value: sessionToken(), maxAge: SESSION_SECONDS }]);
   return send(res, 200, { ok: true });
 }
@@ -1153,7 +1199,7 @@ async function handler(req, res) {
   } catch (error) {
     const status = error.status || 500;
     if (status >= 500) console.error("bookmark", error && error.message);
-    const message = status >= 500 ? "The shelf can't be saved just now." : error.message || "The shelf didn't answer.";
+    const message = status >= 500 && !error.expose ? "The shelf can't be saved just now." : error.message || "The shelf didn't answer.";
     return send(res, status, { error: message });
   }
 }

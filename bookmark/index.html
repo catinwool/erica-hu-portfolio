@@ -1739,10 +1739,10 @@
 
       function renderLock() {
         if (state.step === "code") {
-          main.innerHTML = `<form class="stack" data-act="code"><h1>Bookmark</h1><p class="lede">Check your Gmail for a six-digit code. It lasts ten minutes.</p><label for="code">Code</label><input id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" required autofocus><p id="notice" class="notice" role="status">${esc(state.error)}</p><div class="form-actions"><button type="submit">Confirm</button><button type="button" data-act="restart">Use the key again</button></div></form>`;
+          main.innerHTML = `<form class="stack" data-act="code"><h1>Bookmark</h1><p class="lede">A six-digit code is in your inbox. It lasts ten minutes.</p><label for="code">Code</label><input id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" required autofocus><p id="notice" class="notice" role="status">${esc(state.error)}</p><div class="form-actions"><button type="submit">Confirm</button><button type="button" data-act="restart">Send another code</button></div></form>`;
           return;
         }
-        main.innerHTML = `<form class="stack" data-act="unlock"><h1>Bookmark</h1><p class="lede">This shelf is locked. This browser stays signed in.</p><label for="password">Key</label><input id="password" name="password" type="password" autocomplete="current-password" required autofocus><p id="notice" class="notice" role="status">${esc(state.error)}</p><div class="form-actions"><button type="submit">Open</button></div></form>`;
+        main.innerHTML = `<div class="stack"><h1>Bookmark</h1><p class="lede">This shelf is locked. This browser stays signed in.</p><form data-act="mail"><div class="form-actions"><button type="submit">Email me a code</button></div></form><form data-act="unlock"><label for="password">Key</label><input id="password" name="password" type="password" autocomplete="current-password" required><p id="notice" class="notice" role="status">${esc(state.error)}</p><div class="form-actions"><button type="submit">Open</button></div></form></div>`;
       }
 
       function render() {
@@ -1936,9 +1936,14 @@
         if (!button) return;
         const act = button.dataset.act;
         if (act === "restart") {
-          state.step = "";
-          state.error = "";
-          render();
+          try {
+            const data = await api({ kind: "unlock", mail: true });
+            state.error = "";
+            state.step = data.step === "code" ? "code" : "";
+            render();
+          } catch (error) {
+            say(error.message);
+          }
           return;
         }
         if (act === "untag") {
@@ -2096,6 +2101,18 @@
             const id = data.article && data.article.id;
             if (id) location.hash = hash(["read", id]);
             else render();
+            return;
+          }
+          if (form.dataset.act === "mail") {
+            const data = await api({ kind: "unlock", mail: true });
+            if (data.step === "code") {
+              state.error = "";
+              render();
+              return;
+            }
+            await load();
+            state.error = "";
+            render();
             return;
           }
           if (form.dataset.act === "unlock") {
