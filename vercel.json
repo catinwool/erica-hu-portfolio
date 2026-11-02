@@ -33,6 +33,17 @@
       ],
       "destination": "https://casa.erica-hu.com",
       "permanent": false
+    },
+    {
+      "source": "/:path((?!api/|art/|bookmark(?:/|$)|favicon\\.svg$).+)",
+      "has": [
+        {
+          "type": "host",
+          "value": "bookmark.erica-hu.com"
+        }
+      ],
+      "destination": "https://bookmark.erica-hu.com",
+      "permanent": false
     }
   ],
   "rewrites": [
@@ -45,6 +56,16 @@
         }
       ],
       "destination": "/casa"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "bookmark.erica-hu.com"
+        }
+      ],
+      "destination": "/bookmark"
     },
     {
       "source": "/",

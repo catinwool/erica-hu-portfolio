@@ -1,6 +1,8 @@
 {
   "private": true,
   "dependencies": {
-    "@vercel/blob": "^2.3.0"
+    "@mozilla/readability": "^0.6.0",
+    "@vercel/blob": "^2.3.0",
+    "linkedom": "^0.18.15"
   }
 }

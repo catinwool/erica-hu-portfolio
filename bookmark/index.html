@@ -1,0 +1,2371 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bookmark</title>
+    <meta name="description" content="Articles saved, and the lines kept from them." />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..720;1,7..72,200..720&family=Source+Sans+3:ital,wght@0,400;0,560;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --paper: #ffffff;
+        --ink: #241c14;
+        --ink-soft: rgba(36, 28, 20, 0.68);
+        --ink-faint: rgba(36, 28, 20, 0.42);
+        --rule: rgba(36, 28, 20, 0.16);
+        --accent: #8f3b28;
+        --mark: #e6d3b8;
+        --pen-yellow: #ffe56a;
+        --pen-green: #c6ef9a;
+        --pen-orange: #ffc894;
+        --pen-pink: #ffc4dd;
+        --pen-lilac: #e3d0f6;
+        --pen-blue: #c5e0fb;
+        --type: "Literata", Georgia, "Palatino Linotype", Palatino, "Times New Roman", serif;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        hanging-punctuation: first last;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--type);
+        font-optical-sizing: auto;
+        font-size: 1.125rem;
+        font-weight: 400;
+        line-height: 1.55;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      button,
+      input,
+      textarea {
+        font: inherit;
+        color: inherit;
+      }
+
+      button {
+        background: none;
+        border: 0;
+        padding: 0;
+        cursor: pointer;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      a:focus-visible,
+      button:focus-visible,
+      input:focus-visible,
+      textarea:focus-visible,
+      mark:focus-visible {
+        outline: 1.5px dashed var(--accent);
+        outline-offset: 4px;
+      }
+
+      ::selection {
+        background: var(--mark);
+        color: var(--ink);
+      }
+
+      ::placeholder {
+        color: var(--ink-faint);
+        font-style: italic;
+      }
+
+      .shelf {
+        display: grid;
+        grid-template-columns: 13.5rem minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .menu {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding: 2.6rem 1.35rem 1.5rem 1.7rem;
+        border-right: 1px solid var(--rule);
+        font-family: "Source Sans 3", "Avenir Next", "Segoe UI", sans-serif;
+        font-style: normal;
+        font-size: 1.02rem;
+        font-weight: 400;
+        line-height: 1.3;
+      }
+
+      .name {
+        font-size: 1.2rem;
+        font-weight: 560;
+        letter-spacing: -0.01em;
+        text-decoration: none;
+      }
+
+      .name:hover {
+        color: var(--accent);
+      }
+
+      .search {
+        margin-top: 1.2rem;
+      }
+
+      .search input {
+        width: 100%;
+        border: 0;
+        border-bottom: 1px solid var(--rule);
+        border-radius: 0;
+        background: transparent;
+        font-style: normal;
+        padding: 0.18rem 0 0.32rem;
+      }
+
+      .search input::placeholder {
+        font-style: normal;
+        color: var(--ink-soft);
+      }
+
+      .menu-views {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.28rem;
+        margin-top: 1.15rem;
+      }
+
+      .menu-views a,
+      .menu-tags a {
+        text-decoration: none;
+        color: var(--ink);
+      }
+
+      .menu-views a[aria-current="page"],
+      .menu-tags a[aria-current="true"] {
+        color: var(--ink);
+        font-weight: 560;
+      }
+
+      .menu-views a:hover,
+      .menu-tags a:hover,
+      .menu-tags a.folder-drop {
+        color: var(--accent);
+      }
+
+      .menu-views a[data-view="save"] {
+        margin-top: 0.85rem;
+      }
+
+      .menu-tags {
+        margin-top: 1.7rem;
+        overflow: auto;
+        min-height: 0;
+        padding-bottom: 0.4rem;
+      }
+
+      .menu-views[hidden],
+      .menu-tags[hidden],
+      .menu-lock[hidden] {
+        display: none;
+      }
+
+      .menu-lock {
+        margin-top: auto;
+        padding-top: 1.2rem;
+        color: var(--ink-faint);
+        font-size: 0.82rem;
+        font-weight: 560;
+        letter-spacing: 0.04em;
+        text-align: left;
+        text-transform: uppercase;
+      }
+
+      .menu-lock:hover {
+        color: var(--accent);
+      }
+
+      .menu-label,
+      .search-label {
+        margin: 0 0 0.45rem;
+        color: var(--ink-soft);
+        font-style: normal;
+        font-size: 0.82rem;
+        font-weight: 560;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .menu-label-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.6rem;
+        margin: 0 0 0.35rem;
+      }
+
+      .menu-label-row .menu-label {
+        margin: 0;
+      }
+
+      .folder-rank {
+        display: flex;
+        gap: 0.65rem;
+        margin: 0;
+      }
+
+      .folder-rank button {
+        color: var(--ink-soft);
+        font-style: normal;
+        font-size: 0.82rem;
+        font-weight: 560;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+      }
+
+      .folder-rank button[aria-pressed="true"] {
+        color: var(--ink);
+      }
+
+      .folder-rank button:hover {
+        color: var(--accent);
+      }
+
+      .folder-group {
+        margin-top: 1.45rem;
+      }
+
+      .menu-tags .folder-group a {
+        color: var(--ink-faint);
+      }
+
+      .menu-tags .folder-group a[aria-current="true"] {
+        color: var(--ink-soft);
+        font-weight: 560;
+      }
+
+      .folder-head {
+        display: block;
+        margin: 0 0 0.35rem;
+        color: var(--ink-faint);
+        font-style: normal;
+        font-size: 0.82rem;
+        font-weight: 560;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        text-decoration: none;
+      }
+
+      .folder-head[aria-current="true"] {
+        color: var(--ink-soft);
+      }
+
+      .folder-head:hover {
+        color: var(--accent);
+      }
+
+      .search-label {
+        margin-top: 1.5rem;
+      }
+
+      .search-label:first-child {
+        margin-top: 0;
+      }
+
+      .menu-tags a {
+        display: block;
+        font-style: normal;
+        padding: 0.16rem 0;
+      }
+
+      .column {
+        width: min(40rem, calc(100% - 3.2rem));
+        margin: 2.6rem auto 4.5rem;
+      }
+
+      .intro {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.7rem;
+        margin: 0 0 1.25rem;
+      }
+
+      .lede {
+        margin: 0;
+        max-width: 36rem;
+        color: var(--ink-soft);
+        font-style: italic;
+        font-size: 1.05rem;
+        line-height: 1.45;
+      }
+
+      .quiet {
+        color: var(--ink-faint);
+        font-style: italic;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+
+      .quiet:hover,
+      .back:hover,
+      .remove-piece:hover,
+      .form-actions button:hover,
+      .form-actions a:hover {
+        color: var(--accent);
+      }
+
+      .pieces,
+      .quotes {
+        list-style: none;
+        margin: 0.55rem 0 0;
+        padding: 0;
+      }
+
+      .pieces a,
+      .quotes a {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        column-gap: 1.25rem;
+        row-gap: 0.2rem;
+        padding: 1.12rem 0;
+        border-top: 1px solid var(--rule);
+        text-decoration: none;
+        color: inherit;
+      }
+
+      .piece-preview {
+        grid-column: 1 / -1;
+        display: block;
+        width: 100%;
+        height: 11.5rem;
+        object-fit: cover;
+        object-position: center 22%;
+        margin: 0 0 0.7rem;
+      }
+
+      .piece-title {
+        font-size: 1.32rem;
+        font-weight: 480;
+        letter-spacing: -0.02em;
+        line-height: 1.25;
+        text-wrap: balance;
+      }
+
+      .pieces a[draggable="true"],
+      .reader h1[draggable="true"] {
+        cursor: grab;
+      }
+
+      .pieces a.dragging,
+      .reader h1.dragging {
+        opacity: 0.45;
+      }
+
+      .pieces time,
+      .piece-source,
+      .piece-tags,
+      .quotes span {
+        color: var(--ink-faint);
+        font-style: italic;
+        font-size: 0.95rem;
+      }
+
+      .pieces time {
+        white-space: nowrap;
+      }
+
+      .piece-source,
+      .piece-tags,
+      .quotes span {
+        grid-column: 1 / -1;
+      }
+
+      .piece-tags {
+        margin-top: 0.15rem;
+      }
+
+      .quotes p {
+        margin: 0;
+        font-style: italic;
+        font-size: clamp(1.28rem, 2.4vw, 1.5rem);
+        font-weight: 450;
+        letter-spacing: -0.02em;
+        line-height: 1.4;
+        text-wrap: pretty;
+        overflow-wrap: break-word;
+      }
+
+      .quotes span {
+        margin-top: 0.55rem;
+      }
+
+      .continue {
+        margin: 0 0 1.5rem;
+      }
+
+      .continue ul {
+        display: flex;
+        gap: 0.9rem;
+        overflow-x: auto;
+        list-style: none;
+        margin: 0.7rem 0 0;
+        padding: 0.15rem 0 0.35rem;
+        scrollbar-width: none;
+      }
+
+      .continue ul::-webkit-scrollbar {
+        display: none;
+      }
+
+      .continue a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 4.7rem;
+        text-decoration: none;
+        color: inherit;
+      }
+
+      .story {
+        width: 4.15rem;
+        height: 4.15rem;
+        padding: 2px;
+        border-radius: 50%;
+        background: conic-gradient(from 200deg, #8f3b28, #c98455, #e6d3b8, #8f3b28);
+      }
+
+      .story-face {
+        display: grid;
+        place-items: center;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        background: #f4efe8;
+      }
+
+      .story-face img,
+      .story-letter {
+        width: 100%;
+        height: 100%;
+      }
+
+      .story-face img {
+        object-fit: cover;
+      }
+
+      .story-letter {
+        display: grid;
+        place-items: center;
+        font-size: 1.05rem;
+        letter-spacing: -0.03em;
+      }
+
+      .story-title {
+        width: 4.7rem;
+        margin-top: 0.4rem;
+        font-family: "Source Sans 3", "Avenir Next", "Segoe UI", sans-serif;
+        font-size: 0.72rem;
+        line-height: 1.25;
+        text-align: center;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .continue a:hover .story-title {
+        color: var(--accent);
+      }
+
+      .empty {
+        margin: 1.2rem 0 0;
+        color: var(--ink-soft);
+        font-style: italic;
+      }
+
+      .back {
+        color: var(--ink-faint);
+        font-style: italic;
+        text-decoration: none;
+      }
+
+      .reader h1,
+      .stack h1 {
+        margin: 0.55rem 0 0.35rem;
+        font-size: clamp(2.2rem, 5vw, 3rem);
+        font-weight: 640;
+        letter-spacing: -0.038em;
+        line-height: 1.05;
+        text-wrap: balance;
+      }
+
+      .meta {
+        margin: 0.15rem 0 0;
+        color: var(--ink-soft);
+        font-style: italic;
+      }
+
+      a.original {
+        text-decoration: underline;
+        text-decoration-color: var(--rule);
+        text-underline-offset: 0.22em;
+        text-decoration-thickness: 1px;
+      }
+
+      a.original:hover {
+        color: var(--accent);
+        text-decoration-color: var(--accent);
+      }
+
+      .tagline {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.35rem 0.35rem;
+        margin: 1rem 0 1.7rem;
+      }
+
+      .tagline ul {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.3rem 0;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .tagline li {
+        color: var(--ink-faint);
+        font-style: italic;
+      }
+
+      .tagline li:not(:last-child)::after {
+        content: "·";
+        margin: 0 0.5rem;
+        font-style: normal;
+      }
+
+      .tagline a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .tagline a:hover,
+      .tagline button:hover {
+        color: var(--accent);
+      }
+
+      .tagline button {
+        margin-left: 0.28rem;
+        color: var(--ink-faint);
+        font-style: normal;
+      }
+
+      .tagline input {
+        width: 7.5rem;
+        border: 0;
+        border-bottom: 1px solid var(--rule);
+        border-radius: 0;
+        background: transparent;
+        font-style: italic;
+        padding: 0.12rem 0;
+      }
+
+      .contents {
+        margin: 0.45rem 0 2.1rem;
+        padding: 0.95rem 1.15rem 0.85rem;
+        background: #f4efe8;
+        border-radius: 1rem;
+        font-family: "Source Sans 3", "Avenir Next", "Segoe UI", sans-serif;
+      }
+
+      .contents .menu-label {
+        margin: 0 0 0.35rem;
+        font-family: inherit;
+        font-style: normal;
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .contents ol {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .contents button {
+        display: block;
+        width: 100%;
+        color: var(--ink);
+        font-family: inherit;
+        font-style: normal;
+        font-size: 1.05rem;
+        line-height: 1.35;
+        text-align: left;
+        padding: 0.28rem 0;
+      }
+
+      .contents button:hover {
+        color: var(--accent);
+      }
+
+      .body h2 {
+        margin: 2.15rem 0 0.7rem;
+        font-size: 1.35rem;
+        font-weight: 620;
+        letter-spacing: -0.025em;
+        line-height: 1.22;
+        text-wrap: balance;
+        scroll-margin-top: 1.5rem;
+      }
+
+      .body h2:first-child {
+        margin-top: 0.15rem;
+      }
+
+      .body blockquote {
+        margin: 1.45rem 0 1.55rem;
+        padding: 0.1rem 0 0.1rem 1.05rem;
+        border-left: 2px solid var(--accent);
+        font-style: italic;
+        font-size: 1.32rem;
+        line-height: 1.45;
+      }
+
+      .body p {
+        margin: 0 0 1.15rem;
+        font-size: 1.2rem;
+        line-height: 1.68;
+        overflow-wrap: break-word;
+      }
+
+      .body figure {
+        margin: 0.2rem 0 1.45rem;
+      }
+
+      .body img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .body figcaption {
+        margin-top: 0.45rem;
+        color: var(--ink-faint);
+        font-style: italic;
+        font-size: 0.95rem;
+        line-height: 1.4;
+      }
+
+      mark {
+        background: var(--pen-yellow);
+        color: inherit;
+        padding: 0.02em 0.08em;
+        border-radius: 0.12em;
+        cursor: pointer;
+      }
+
+      mark[data-ink="yellow"] {
+        background: var(--pen-yellow);
+      }
+
+      mark[data-ink="green"] {
+        background: var(--pen-green);
+      }
+
+      mark[data-ink="orange"] {
+        background: var(--pen-orange);
+      }
+
+      mark[data-ink="pink"] {
+        background: var(--pen-pink);
+      }
+
+      mark[data-ink="lilac"] {
+        background: var(--pen-lilac);
+      }
+
+      mark[data-ink="blue"] {
+        background: var(--pen-blue);
+      }
+
+      .quotes p[data-ink] {
+        box-decoration-break: clone;
+        -webkit-box-decoration-break: clone;
+        padding: 0.04em 0.14em;
+        border-radius: 0.12em;
+      }
+
+      .quotes p[data-ink="yellow"] {
+        background: var(--pen-yellow);
+      }
+
+      .quotes p[data-ink="green"] {
+        background: var(--pen-green);
+      }
+
+      .quotes p[data-ink="orange"] {
+        background: var(--pen-orange);
+      }
+
+      .quotes p[data-ink="pink"] {
+        background: var(--pen-pink);
+      }
+
+      .quotes p[data-ink="lilac"] {
+        background: var(--pen-lilac);
+      }
+
+      .quotes p[data-ink="blue"] {
+        background: var(--pen-blue);
+      }
+
+      .quote-rank {
+        display: flex;
+        gap: 0.85rem;
+        margin: 0 0 0.2rem;
+        font-family: "Source Sans 3", "Avenir Next", "Segoe UI", sans-serif;
+      }
+
+      .quote-rank button {
+        color: var(--ink-soft);
+        font-size: 0.82rem;
+        font-weight: 560;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .quote-rank button[aria-pressed="true"] {
+        color: var(--ink);
+      }
+
+      .quote-rank button:hover {
+        color: var(--accent);
+      }
+
+      .books {
+        list-style: none;
+        margin: 0.35rem 0 0;
+        padding: 0;
+      }
+
+      .books a {
+        display: block;
+        padding: 1.05rem 0 1.15rem;
+        border-top: 1px solid var(--rule);
+        text-decoration: none;
+        color: inherit;
+      }
+
+      .books a:hover .book-name {
+        color: var(--accent);
+      }
+
+      .book-name {
+        font-size: 1.45rem;
+        letter-spacing: -0.02em;
+      }
+
+      .book-count {
+        margin-left: 0.55rem;
+        color: var(--ink-faint);
+        font-style: italic;
+        font-size: 0.95rem;
+      }
+
+      .book-line {
+        margin: 0.45rem 0 0;
+        max-width: 38rem;
+        font-style: italic;
+        font-size: 1.05rem;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .book-archive {
+        margin-top: 1.7rem;
+      }
+
+      .book-archive .book-name {
+        color: var(--ink-faint);
+      }
+
+      .book-open {
+        margin: 0.35rem 0 0;
+        font-size: clamp(1.8rem, 4vw, 2.4rem);
+        font-weight: 640;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+      }
+
+      .gather {
+        margin: 1.45rem 0 0;
+      }
+
+      .gather h2 {
+        margin: 0;
+        font-size: 1.16rem;
+        font-weight: 560;
+        letter-spacing: -0.02em;
+        line-height: 1.3;
+      }
+
+      .gather h2 a {
+        text-decoration: none;
+      }
+
+      .gather h2 a:hover {
+        color: var(--accent);
+      }
+
+      .gather .quotes {
+        margin-top: 0.2rem;
+      }
+
+      .notice {
+        margin: 0.8rem 0 0;
+        color: var(--accent);
+        font-style: italic;
+      }
+
+      .notice:empty {
+        display: none;
+      }
+
+      .remove-piece {
+        margin-top: 2.4rem;
+        color: var(--ink-faint);
+        font-style: italic;
+      }
+
+      .stack label {
+        display: block;
+        margin: 1.15rem 0 0.15rem;
+        color: var(--ink-faint);
+        font-style: italic;
+        font-size: 0.98rem;
+      }
+
+      .stack input,
+      .stack textarea {
+        width: 100%;
+        border: 0;
+        border-bottom: 1px solid var(--rule);
+        border-radius: 0;
+        background: transparent;
+        padding: 0.4rem 0;
+      }
+
+      .stack input.dropping {
+        border-bottom-color: var(--accent);
+      }
+
+      .stack textarea {
+        min-height: 14rem;
+        line-height: 1.6;
+        resize: vertical;
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 1.25rem;
+        align-items: baseline;
+        margin-top: 1.35rem;
+      }
+
+      .form-actions a {
+        color: var(--ink-faint);
+        font-style: italic;
+        text-decoration: none;
+      }
+
+      .float {
+        position: fixed;
+        z-index: 4;
+        border: 1px solid var(--rule);
+        background: #fff;
+        font-style: italic;
+        font-size: 0.95rem;
+        padding: 0.28rem 0.72rem;
+        border-radius: 999px;
+        box-shadow: 0 8px 22px rgba(36, 28, 20, 0.09);
+      }
+
+      .float[hidden] {
+        display: none;
+      }
+
+      .trash:not([hidden]) {
+        display: grid;
+        place-items: center;
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+        color: var(--ink);
+        font-style: normal;
+      }
+
+      .trash svg {
+        display: block;
+        width: 0.95rem;
+        height: 0.95rem;
+      }
+
+      .trash:hover {
+        color: var(--accent);
+      }
+
+      .pens:not([hidden]) {
+        display: flex;
+        align-items: center;
+        gap: 0.38rem;
+        padding: 0.34rem 0.46rem;
+        font-style: normal;
+      }
+
+      .pens button {
+        width: 1.15rem;
+        height: 1.15rem;
+        border-radius: 50%;
+        border: 1px solid rgba(36, 28, 20, 0.22);
+      }
+
+      .pens button[data-ink="yellow"] {
+        background: var(--pen-yellow);
+      }
+
+      .pens button[data-ink="green"] {
+        background: var(--pen-green);
+      }
+
+      .pens button[data-ink="orange"] {
+        background: var(--pen-orange);
+      }
+
+      .pens button[data-ink="pink"] {
+        background: var(--pen-pink);
+      }
+
+      .pens button[data-ink="lilac"] {
+        background: var(--pen-lilac);
+      }
+
+      .pens button[data-ink="blue"] {
+        background: var(--pen-blue);
+      }
+
+      .pens button:hover {
+        transform: scale(1.08);
+      }
+
+      .pens button[aria-pressed="true"] {
+        box-shadow: 0 0 0 2px #fff, 0 0 0 3px var(--ink);
+      }
+
+      @media (max-width: 760px) {
+        .shelf {
+          display: block;
+        }
+
+        .menu {
+          position: sticky;
+          z-index: 3;
+          height: auto;
+          padding: 0.95rem 1rem 0.8rem;
+          border-right: 0;
+          border-bottom: 1px solid var(--rule);
+          background: var(--paper);
+        }
+
+        .search {
+          margin-top: 0.75rem;
+        }
+
+        .menu-views {
+          flex-direction: row;
+          flex-wrap: wrap;
+          align-items: baseline;
+          gap: 0.35rem 1.05rem;
+          margin-top: 0.7rem;
+        }
+
+        .menu-views a[data-view="save"] {
+          margin-top: 0;
+        }
+
+        .menu-tags {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: baseline;
+          gap: 0.15rem 0.85rem;
+          margin-top: 0.7rem;
+          overflow: visible;
+        }
+
+        .menu-label-row {
+          width: 100%;
+        }
+
+        .menu-label {
+          width: auto;
+          margin-bottom: 0;
+        }
+
+        .folder-group {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: baseline;
+          gap: 0.15rem 0.85rem;
+          width: 100%;
+          margin-top: 0.85rem;
+        }
+
+        .folder-group .folder-head,
+        .folder-group .menu-label {
+          width: 100%;
+          margin-bottom: 0.1rem;
+        }
+
+        .column {
+          width: min(40rem, calc(100% - 2rem));
+          margin-top: 1.35rem;
+        }
+
+        .piece-title {
+          font-size: 1.2rem;
+        }
+
+        .body h2 {
+          scroll-margin-top: 5.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shelf">
+      <aside class="menu">
+        <a class="name" href="#articles">Bookmark</a>
+        <form class="search" role="search">
+          <input id="search" name="q" type="search" placeholder="Search" aria-label="Search the shelf" autocomplete="off" enterkeyhint="search" />
+        </form>
+        <nav class="menu-views" aria-label="Library">
+          <a href="#articles" data-view="articles">Articles</a>
+          <a href="#quotes" data-view="quotes">Quotes</a>
+          <a href="#save" data-view="save">Save a piece</a>
+        </nav>
+        <nav class="menu-tags" id="tags" aria-label="Folders" hidden></nav>
+        <button type="button" id="lock" class="menu-lock" hidden>Lock</button>
+      </aside>
+      <div class="column">
+        <main id="main"></main>
+      </div>
+    </div>
+    <div id="keep" class="float pens" role="group" aria-label="Highlight" hidden>
+      <button type="button" data-ink="yellow" aria-label="Yellow"></button>
+      <button type="button" data-ink="green" aria-label="Green"></button>
+      <button type="button" data-ink="orange" aria-label="Orange"></button>
+      <button type="button" data-ink="pink" aria-label="Pink"></button>
+      <button type="button" data-ink="lilac" aria-label="Lilac"></button>
+      <button type="button" data-ink="blue" aria-label="Blue"></button>
+    </div>
+    <button type="button" id="letgo" class="float trash" hidden aria-label="Let this go">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M5 7h14M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7M7.2 7l.7 12.1a1.2 1.2 0 0 0 1.2 1.1h5.8a1.2 1.2 0 0 0 1.2-1.1L16.8 7M10 11v5M14 11v5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </button>
+    <script>
+      const state = {
+        articles: [],
+        quotes: [],
+        locked: false,
+        sealed: false,
+        step: "",
+        loadError: "",
+        error: "",
+        view: "articles",
+        tag: "",
+        query: "",
+        topic: "",
+        articleId: "",
+        quoteId: "",
+        folderOrder: "alpha",
+        quoteGroup: "theme",
+      };
+      let lastKey = "";
+      let keepText = "";
+      try {
+        const savedRank = localStorage.getItem("bookmark-folder-rank");
+        if (savedRank === "recent" || savedRank === "alpha") state.folderOrder = savedRank;
+        const savedGroup = localStorage.getItem("bookmark-quote-group");
+        if (savedGroup === "piece" || savedGroup === "theme") state.quoteGroup = savedGroup;
+      } catch {
+        /* the shelf still works if the choice cannot be saved */
+      }
+
+      const main = document.getElementById("main");
+      const keep = document.getElementById("keep");
+      const letgo = document.getElementById("letgo");
+
+      function esc(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function hash(parts) {
+        return "#" + parts.map((part) => encodeURIComponent(part)).join("/");
+      }
+
+      function when(value) {
+        const iso = String(value || "");
+        const date = new Date(iso.length === 10 ? iso + "T00:00:00Z" : iso);
+        if (Number.isNaN(date.getTime())) return "";
+        return new Intl.DateTimeFormat("en-US", {
+          month: "short",
+          year: "numeric",
+          timeZone: "UTC",
+        }).format(date);
+      }
+
+      function partsFromHash() {
+        const raw = location.hash.replace(/^#/, "");
+        if (!raw) return [];
+        return raw.split("/").filter(Boolean).map((part) => {
+          try {
+            return decodeURIComponent(part);
+          } catch {
+            return part;
+          }
+        });
+      }
+
+      function readRoute() {
+        const parts = partsFromHash();
+        const head = parts[0] || "articles";
+        const blank = { tag: "", topic: "", query: "", articleId: "", quoteId: "" };
+        if (head === "quotes") return { view: "quotes", ...blank, tag: parts[1] || "" };
+        if (head === "read") return { view: "read", ...blank, articleId: parts[1] || "", quoteId: parts[2] || "" };
+        if (head === "save") return { view: "save", ...blank };
+        if (head === "search") return { view: "search", ...blank, query: parts.slice(1).join("/") };
+        if (head === "tag") return { view: "articles", ...blank, topic: parts[1] || "" };
+        if (head === "articles") return { view: "articles", ...blank, tag: parts[1] || "" };
+        return { view: "articles", ...blank };
+      }
+
+      function shelfArticles() {
+        const real = state.articles.some((article) => !article.sample);
+        const list = real ? state.articles.filter((article) => !article.sample) : state.articles.slice();
+        return list.sort(
+          (a, b) => String(b.savedAt).localeCompare(String(a.savedAt)) || String(a.title).localeCompare(String(b.title))
+        );
+      }
+
+      function articleById(id) {
+        return state.articles.find((article) => article.id === id) || null;
+      }
+
+      function shelfQuotes() {
+        const ids = new Set(shelfArticles().map((article) => article.id));
+        return state.quotes
+          .filter((quote) => ids.has(quote.articleId))
+          .sort((a, b) => String(b.at).localeCompare(String(a.at)));
+      }
+
+      function archivedTag(tag) {
+        const name = String(tag || "");
+        return name === "archive" || name.startsWith("archived ");
+      }
+
+      function folderLabel(tag) {
+        const name = String(tag || "");
+        if (name === "archive") return "";
+        if (name.startsWith("archived ")) return name.slice("archived ".length);
+        return name;
+      }
+
+      function hideFloats() {
+        keep.hidden = true;
+        letgo.hidden = true;
+        keepText = "";
+        delete keep.dataset.quote;
+        keep.querySelectorAll("[aria-pressed]").forEach((pen) => pen.removeAttribute("aria-pressed"));
+      }
+
+      function bookOf(quote, article) {
+        if (quote && quote.book) return quote.book;
+        return article && article.folder ? article.folder : "";
+      }
+
+      function renderTags(articles) {
+        const nav = document.getElementById("tags");
+        const byId = new Map(articles.map((article) => [article.id, article]));
+        const newest = new Map();
+        if (state.view === "quotes") {
+          for (const quote of shelfQuotes()) {
+            const book = bookOf(quote, byId.get(quote.articleId));
+            if (!book) continue;
+            const prev = newest.get(book) || "";
+            if (String(quote.at) > prev) newest.set(book, String(quote.at));
+          }
+        } else {
+          for (const article of articles) {
+            const stamp = String(article.savedAt || "");
+            const folder = article.folder || "";
+            if (!folder) continue;
+            const prev = newest.get(folder) || "";
+            if (stamp > prev) newest.set(folder, stamp);
+          }
+        }
+        const tags = [...newest.keys()];
+        if (!tags.length) {
+          nav.hidden = true;
+          nav.innerHTML = "";
+          return;
+        }
+        if (state.folderOrder === "recent") {
+          tags.sort((a, b) => newest.get(b).localeCompare(newest.get(a)) || a.localeCompare(b));
+        } else {
+          tags.sort((a, b) => a.localeCompare(b));
+        }
+        const view = state.view === "quotes" ? "quotes" : "articles";
+        const rank = state.folderOrder === "recent" ? "recent" : "alpha";
+        const label = view === "quotes" ? "Books" : "Folders";
+        const live = tags.filter((tag) => !archivedTag(tag));
+        const archived = tags.filter((tag) => archivedTag(tag));
+        const link = (tag) => {
+          const on = state.tag === tag ? ' aria-current="true"' : "";
+          return `<a href="${hash([view, tag])}" data-folder="${esc(tag)}"${on}>${esc(folderLabel(tag))}</a>`;
+        };
+        const plain = archived.find((tag) => tag === "archive");
+        const themes = archived.filter((tag) => tag !== "archive");
+        const head = plain
+          ? `<a class="folder-head" href="${hash([view, plain])}" data-folder="${esc(plain)}"${state.tag === plain ? ' aria-current="true"' : ""}>Archive</a>`
+          : `<p class="menu-label">Archive</p>`;
+        const archiveBlock = archived.length ? `<div class="folder-group">${head}${themes.map(link).join("")}</div>` : "";
+        nav.hidden = false;
+        nav.innerHTML = `<div class="menu-label-row"><p class="menu-label">${label}</p><p class="folder-rank"><button type="button" data-rank="alpha" aria-pressed="${rank === "alpha" ? "true" : "false"}">A–Z</button><button type="button" data-rank="recent" aria-pressed="${rank === "recent" ? "true" : "false"}">Recent</button></p></div>${live.map(link).join("")}${archiveBlock}`;
+      }
+
+      function sourceBits(article) {
+        const bits = [];
+        if (article.author) bits.push(article.author);
+        if (article.site) bits.push(article.site);
+        if (article.sample) bits.push("Sample");
+        const date = when(article.savedAt);
+        if (date) bits.push(date);
+        return bits;
+      }
+
+      function fold(value) {
+        return String(value || "").toLowerCase();
+      }
+
+      function wordsOf(query) {
+        return fold(query).split(/\s+/).filter(Boolean);
+      }
+
+      function containsAll(hay, words) {
+        return words.every((word) => hay.includes(word));
+      }
+
+      function previewOf(article) {
+        const blocks = article.blocks || [];
+        return blocks.find((block) => block && block.image) || null;
+      }
+
+      function pieceRow(article) {
+        const bits = [];
+        if (article.author) bits.push(article.author);
+        if (article.site) bits.push(article.site);
+        const source = bits.join(" · ");
+        const tags = (article.tags || []).join(" · ");
+        const preview = previewOf(article);
+        const image = preview
+          ? `<img class="piece-preview" src="${esc(preview.image)}" alt="${esc(preview.alt || "")}" referrerpolicy="no-referrer">`
+          : "";
+        return `<li><a draggable="true" data-article="${esc(article.id)}" href="${hash(["read", article.id])}">${image}<span class="piece-title">${esc(article.title)}</span><time datetime="${esc(article.savedAt)}">${esc(when(article.savedAt))}</time>${source ? `<span class="piece-source">${esc(source)}</span>` : ""}${tags ? `<span class="piece-tags">${esc(tags)}</span>` : ""}</a></li>`;
+      }
+
+      function quoteRow(quote, article, gathered) {
+        const title = article ? article.title : "A piece no longer on the shelf";
+        const date = article ? when(article.savedAt) : "";
+        const from = date ? `${title} · ${date}` : title;
+        const source = gathered ? "" : `<span>${esc(from)}</span>`;
+        const ink = gathered ? "" : ` data-ink="${esc(quote.ink || "yellow")}"`;
+        return `<li><a href="${hash(["read", quote.articleId, quote.id])}"><p${ink}>${esc(quote.text)}</p>${source}</a></li>`;
+      }
+
+      function renderSearch(articles) {
+        const words = wordsOf(state.query);
+        const byId = new Map(articles.map((article) => [article.id, article]));
+        const foundArticles = [];
+        for (const article of articles) {
+          const hay = fold(
+            [article.title, article.author, article.site, article.url, article.folder, ...(article.tags || []), ...(article.paragraphs || [])].join("\n")
+          );
+          if (containsAll(hay, words)) foundArticles.push(article);
+        }
+        const foundQuotes = shelfQuotes().filter((quote) => {
+          const article = byId.get(quote.articleId);
+          const hay = fold([quote.text, article ? article.title : ""].join("\n"));
+          return containsAll(hay, words);
+        });
+        const shownArticles = foundArticles.slice(0, 40);
+        const shownQuotes = foundQuotes.slice(0, 40);
+        const parts = [];
+        if (shownArticles.length) {
+          const label = foundArticles.length > shownArticles.length ? `Articles · 40 of ${foundArticles.length}` : "Articles";
+          parts.push(`<p class="search-label">${label}</p><ul class="pieces">${shownArticles.map(pieceRow).join("")}</ul>`);
+        }
+        if (shownQuotes.length) {
+          const label = foundQuotes.length > shownQuotes.length ? `Quotes · 40 of ${foundQuotes.length}` : "Quotes";
+          parts.push(`<p class="search-label">${label}</p><ul class="quotes">${shownQuotes.map((quote) => quoteRow(quote, byId.get(quote.articleId))).join("")}</ul>`);
+        }
+        main.innerHTML = parts.length
+          ? parts.join("")
+          : `<p class="empty">Nothing on the shelf matches that.</p>`;
+      }
+
+      function hasProse(article) {
+        return (article.paragraphs || []).some((line) => String(line).length > 80);
+      }
+
+      function readingMap() {
+        try {
+          const data = JSON.parse(localStorage.getItem("bookmark-reading") || "{}");
+          return data && typeof data === "object" ? data : {};
+        } catch {
+          return {};
+        }
+      }
+
+      function saveReading(map) {
+        try {
+          localStorage.setItem("bookmark-reading", JSON.stringify(map));
+        } catch {
+          /* the place is kept for this visit in memory only if storage is full */
+        }
+      }
+
+      function storyLetter(article) {
+        const words = String(article.title || "")
+          .split(/\s+/)
+          .filter((word) => word.length > 1 && !/^(the|a|an|of|on|and|to|for)$/i.test(word));
+        const first = words[0] || article.title || "A";
+        const second = words[1] || "";
+        return (first[0] + (second[0] || "")).toUpperCase();
+      }
+
+      function continueRow(articles) {
+        const map = readingMap();
+        const reading = articles
+          .filter((article) => map[article.id] && hasProse(article))
+          .sort((a, b) => (map[b.id].at || 0) - (map[a.id].at || 0));
+        if (!reading.length) return "";
+        const items = reading
+          .map((article) => {
+            const preview = previewOf(article);
+            const letter = storyLetter(article);
+            const face = preview
+              ? `<img class="story-photo" src="${esc(preview.image)}" alt="" data-letter="${esc(letter)}" referrerpolicy="no-referrer">`
+              : `<span class="story-letter">${esc(letter)}</span>`;
+            return `<li><a href="${hash(["read", article.id])}"><span class="story"><span class="story-face">${face}</span></span><span class="story-title">${esc(article.title)}</span></a></li>`;
+          })
+          .join("");
+        return `<section class="continue" aria-label="Continue reading"><p class="menu-label">Continue reading</p><ul>${items}</ul></section>`;
+      }
+
+      function rememberPlace() {
+        if (state.view !== "read" || !state.articleId) return;
+        const article = articleById(state.articleId);
+        const body = document.getElementById("body");
+        if (!article || !body || !hasProse(article)) return;
+        const nodes = [...body.querySelectorAll("[data-block]")];
+        if (!nodes.length) return;
+        const map = readingMap();
+        const end = body.getBoundingClientRect().bottom;
+        const started = window.scrollY > 160;
+        if (started && end < window.innerHeight + 64) {
+          if (map[article.id]) {
+            delete map[article.id];
+            saveReading(map);
+          }
+          return;
+        }
+        if (!started) return;
+        let block = 0;
+        for (const node of nodes) {
+          if (node.getBoundingClientRect().top <= 96) block = Number(node.dataset.block) || 0;
+        }
+        map[article.id] = { at: Date.now(), block };
+        saveReading(map);
+      }
+
+      function resumeReading() {
+        const spot = readingMap()[state.articleId];
+        if (!spot || typeof spot.block !== "number") return;
+        const go = () => {
+          const node = document.querySelector(`#body [data-block="${spot.block}"]`);
+          if (!node || state.view !== "read" || state.quoteId) return;
+          const target = node.getBoundingClientRect().top + window.scrollY - 28;
+          window.scrollTo(0, Math.max(0, target));
+        };
+        go();
+        const body = document.getElementById("body");
+        if (!body) return;
+        body.querySelectorAll("img").forEach((img) => {
+          if (!img.complete) img.addEventListener("load", go, { once: true });
+        });
+      }
+
+      function renderArticles(articles) {
+        const samples = articles.some((article) => article.sample);
+        const shown = state.topic
+          ? articles.filter((article) => (article.tags || []).includes(state.topic))
+          : state.tag
+            ? articles.filter((article) => article.folder === state.tag)
+            : articles;
+        const lede = samples
+          ? "A sample shelf, so the shape is visible. Save a piece of your own and these step aside."
+          : "";
+        const rows = shown.map(pieceRow).join("");
+        const empty = state.topic
+          ? `Nothing tagged ${esc(state.topic)}.`
+          : state.tag
+            ? "Nothing in that folder."
+            : "The shelf is empty.";
+        main.innerHTML = `${lede ? `<p class="lede">${lede}</p>` : ""}${continueRow(shown)}${rows ? `<ul class="pieces">${rows}</ul>` : `<p class="empty">${empty}</p>`}`;
+      }
+
+      function quoteGather(quotes, byId) {
+        const groups = [];
+        const index = new Map();
+        for (const quote of quotes) {
+          const id = quote.articleId;
+          let group = index.get(id);
+          if (!group) {
+            group = { article: byId.get(id) || null, quotes: [] };
+            index.set(id, group);
+            groups.push(group);
+          }
+          group.quotes.push(quote);
+        }
+        return groups
+          .map((group) => {
+            const title = group.article ? group.article.title : "A piece no longer on the shelf";
+            const head = group.article
+              ? `<h2><a href="${hash(["read", group.article.id])}">${esc(title)}</a></h2>`
+              : `<h2>${esc(title)}</h2>`;
+            const rows = group.quotes.map((quote) => quoteRow(quote, group.article, true)).join("");
+            return `<section class="gather">${head}<ul class="quotes">${rows}</ul></section>`;
+          })
+          .join("");
+      }
+
+      function quoteSwitch() {
+        const group = state.quoteGroup === "piece" ? "piece" : "theme";
+        return `<p class="quote-rank"><button type="button" data-group="theme" aria-pressed="${group === "theme" ? "true" : "false"}">Themes</button><button type="button" data-group="piece" aria-pressed="${group === "piece" ? "true" : "false"}">Pieces</button></p>`;
+      }
+
+      function bookCard(name, quote, count) {
+        const label = name ? folderLabel(name) || "Archive" : "Not filed";
+        const href = hash(["quotes", name || "open"]);
+        const lines = count === 1 ? "1 line" : `${count} lines`;
+        return `<li><a href="${href}"><span class="book-name">${esc(label)}</span><span class="book-count">${lines}</span><p class="book-line">${esc(quote.text)}</p></a></li>`;
+      }
+
+      function renderQuotes(articles) {
+        const byId = new Map(articles.map((article) => [article.id, article]));
+        const wanted = state.tag === "open" ? "" : state.tag;
+        const quotes = shelfQuotes().filter((quote) => {
+          if (!state.tag) return true;
+          return bookOf(quote, byId.get(quote.articleId)) === wanted;
+        });
+        const rank = quoteSwitch();
+        if (!quotes.length) {
+          const empty = state.tag
+            ? "No lines kept in that book."
+            : "No lines kept yet. Open a piece and select a sentence.";
+          main.innerHTML = `${rank}<p class="empty">${empty}</p>`;
+          return;
+        }
+        const grouped = state.quoteGroup === "piece" || state.tag;
+        if (grouped) {
+          let heading = "";
+          if (state.tag) {
+            const title = wanted ? folderLabel(wanted) || "Archive" : "Not filed";
+            heading = `<h1 class="book-open">${esc(title)}</h1>`;
+          }
+          main.innerHTML = `${rank}${heading}${quoteGather(quotes, byId)}`;
+          return;
+        }
+        const counts = new Map();
+        const newest = new Map();
+        for (const quote of quotes) {
+          const name = bookOf(quote, byId.get(quote.articleId));
+          counts.set(name, (counts.get(name) || 0) + 1);
+          if (!newest.has(name)) newest.set(name, quote);
+        }
+        const names = [...newest.keys()];
+        if (state.folderOrder === "recent") {
+          names.sort((a, b) => String(newest.get(b).at).localeCompare(String(newest.get(a).at)) || a.localeCompare(b));
+        } else {
+          names.sort((a, b) => {
+            if (!a) return 1;
+            if (!b) return -1;
+            return a.localeCompare(b);
+          });
+        }
+        const live = names.filter((name) => name && !archivedTag(name));
+        const archived = names.filter((name) => archivedTag(name));
+        const loose = names.filter((name) => !name);
+        const list = (items) => items.map((name) => bookCard(name, newest.get(name), counts.get(name))).join("");
+        const archiveBlock = archived.length
+          ? `<div class="book-archive"><p class="menu-label">Archive</p><ul class="books">${list(archived)}</ul></div>`
+          : "";
+        main.innerHTML = `${rank}<ul class="books">${list(live)}${list(loose)}</ul>${archiveBlock}`;
+      }
+
+      function renderReader(article) {
+        if (!article) {
+          main.innerHTML = `<a class="back" href="#articles">Shelf</a><p class="empty">That piece isn't on the shelf.</p>`;
+          return;
+        }
+        const bits = sourceBits(article);
+        const folderName = article.folder ? folderLabel(article.folder) || "Archive" : "";
+        const folderLink = folderName
+          ? `<p class="meta"><a href="${hash(["articles", article.folder])}">In ${esc(folderName)}</a></p>`
+          : "";
+        const tags = (article.tags || [])
+          .map(
+            (tag) =>
+              `<li><a href="${hash(["tag", tag])}">${esc(tag)}</a><button type="button" data-act="untag" data-tag="${esc(tag)}" aria-label="Remove ${esc(tag)}">×</button></li>`
+          )
+          .join("");
+        const original = article.url
+          ? `<p class="meta"><a class="original" href="${esc(article.url)}" target="_blank" rel="noreferrer">Original</a></p>`
+          : "";
+        const blocks = article.blocks && article.blocks.length ? article.blocks : article.paragraphs || [];
+        const sections = [];
+        blocks.forEach((block) => {
+          if (!block || !block.heading) return;
+          const slug = String(block.heading)
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "")
+            .slice(0, 40);
+          sections.push({ heading: block.heading, id: `section-${sections.length + 1}-${slug || "part"}` });
+        });
+        const contents =
+          sections.length > 1
+            ? `<nav class="contents" aria-label="Contents"><p class="menu-label">Contents</p><ol>${sections
+                .map(
+                  (section) =>
+                    `<li><button type="button" data-section="${esc(section.id)}">${esc(section.heading)}</button></li>`
+                )
+                .join("")}</ol></nav>`
+            : "";
+        main.innerHTML = `<article class="reader"><a class="back" href="#articles">Shelf</a><h1 draggable="true" data-article="${esc(article.id)}">${esc(article.title)}</h1>${bits.length ? `<p class="meta">${esc(bits.join(" · "))}</p>` : ""}${folderLink}${original}<div class="tagline"><ul>${tags}</ul><form data-act="tag"><input name="tag" aria-label="Add a tag" placeholder="Add a tag" maxlength="32" autocomplete="off"></form></div>${contents}<div class="body" id="body"></div><p id="notice" class="notice" role="status">${esc(state.error)}</p><button type="button" class="remove-piece" data-act="remove">Remove from shelf</button></article>`;
+        const body = document.getElementById("body");
+        const paragraphs = article.paragraphs || [];
+        const kept = state.quotes
+          .filter((quote) => quote.articleId === article.id)
+          .sort((a, b) => String(a.at).localeCompare(String(b.at)));
+        if (!paragraphs.length) {
+          const note = document.createElement("p");
+          note.className = "empty";
+          note.textContent = kept.length
+            ? "The piece itself isn't here yet. These are the lines kept from it."
+            : "The piece itself isn't here yet.";
+          body.appendChild(note);
+          for (const quote of kept) {
+            const p = document.createElement("p");
+            const mark = document.createElement("mark");
+            mark.dataset.quote = quote.id;
+            mark.tabIndex = 0;
+            mark.setAttribute("role", "button");
+            mark.setAttribute("aria-label", "Highlighted line. Activate to let it go.");
+            mark.textContent = quote.text;
+            mark.dataset.ink = quote.ink || "yellow";
+            p.appendChild(mark);
+            body.appendChild(p);
+          }
+        } else {
+          const sectionIds = sections.slice();
+          let place = 0;
+          for (const block of blocks) {
+            let node;
+            if (block && typeof block === "object" && block.heading) {
+              node = document.createElement("h2");
+              const section = sectionIds.shift();
+              if (section) node.id = section.id;
+              node.textContent = block.heading;
+            } else if (block && typeof block === "object" && block.quote) {
+              node = document.createElement("blockquote");
+              node.textContent = block.quote;
+            } else if (block && typeof block === "object" && block.image) {
+              node = document.createElement("figure");
+              const img = document.createElement("img");
+              img.src = block.image;
+              img.alt = block.alt || "";
+              img.referrerPolicy = "no-referrer";
+              img.addEventListener("error", () => node.remove());
+              node.appendChild(img);
+              if (block.alt && block.alt.length > 24) {
+                const caption = document.createElement("figcaption");
+                caption.textContent = block.alt;
+                node.appendChild(caption);
+              }
+            } else {
+              node = document.createElement("p");
+              node.textContent = block;
+            }
+            node.dataset.block = String(place);
+            place += 1;
+            body.appendChild(node);
+          }
+          applyQuotes(body, kept);
+        }
+        if (state.quoteId) {
+          const mark = body.querySelector(`[data-quote="${CSS.escape(state.quoteId)}"]`);
+          if (mark) {
+            mark.dataset.current = "true";
+            requestAnimationFrame(() => mark.scrollIntoView({ block: "center" }));
+          }
+        }
+      }
+
+      function passageOf(article) {
+        const blocks = article.blocks && article.blocks.length ? article.blocks : article.paragraphs || [];
+        const parts = [];
+        for (const block of blocks) {
+          if (typeof block === "string" && block.trim()) parts.push(block.trim());
+          else if (block && block.heading) parts.push(String(block.heading).trim());
+          else if (block && block.quote) parts.push(String(block.quote).trim());
+        }
+        return parts.join(" ");
+      }
+
+      function applyQuotes(root, quotes) {
+        const list = quotes.slice().sort((a, b) => b.text.length - a.text.length);
+        for (const quote of list) {
+          const spans = [];
+          let full = "";
+          let lastBlock = null;
+          const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+          let node;
+          while ((node = walker.nextNode())) {
+            if (!node.nodeValue) continue;
+            const block = node.parentElement && node.parentElement.closest("p, h2, li, figcaption, blockquote");
+            if (full && block !== lastBlock) full += " ";
+            lastBlock = block;
+            const start = full.length;
+            full += node.nodeValue;
+            spans.push({ node, start, end: full.length });
+          }
+          const index = full.indexOf(quote.text);
+          if (index === -1) continue;
+          const matchEnd = index + quote.text.length;
+          const hits = [];
+          for (const span of spans) {
+            const start = Math.max(span.start, index);
+            const end = Math.min(span.end, matchEnd);
+            if (end <= start) continue;
+            hits.push({ node: span.node, start: start - span.start, end: end - span.start });
+          }
+          let first = true;
+          for (const hit of hits) {
+            const range = document.createRange();
+            range.setStart(hit.node, hit.start);
+            range.setEnd(hit.node, hit.end);
+            const mark = document.createElement("mark");
+            mark.dataset.quote = quote.id;
+            mark.dataset.ink = quote.ink || "yellow";
+            if (first) {
+              mark.tabIndex = 0;
+              mark.setAttribute("role", "button");
+              mark.setAttribute("aria-label", "Highlighted passage. Activate to let it go.");
+              first = false;
+            }
+            try {
+              range.surroundContents(mark);
+            } catch {
+              break;
+            }
+          }
+        }
+      }
+
+      function renderSave() {
+        main.innerHTML = `<form class="stack" data-act="save"><h1>Save a piece</h1><p class="lede">Drop a link. The page becomes the piece.</p><label for="url">Link</label><input id="url" name="url" type="text" inputmode="url" maxlength="500" autocomplete="off" spellcheck="false" placeholder="https://" required autofocus><p id="notice" class="notice" role="status">${esc(state.error)}</p><div class="form-actions"><button type="submit">Save</button><a href="#articles">Cancel</a></div></form>`;
+      }
+
+      function renderLock() {
+        if (state.step === "code") {
+          main.innerHTML = `<form class="stack" data-act="code"><h1>Bookmark</h1><p class="lede">Check your Gmail for a six-digit code. It lasts ten minutes.</p><label for="code">Code</label><input id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" required autofocus><p id="notice" class="notice" role="status">${esc(state.error)}</p><div class="form-actions"><button type="submit">Confirm</button><button type="button" data-act="restart">Use the key again</button></div></form>`;
+          return;
+        }
+        main.innerHTML = `<form class="stack" data-act="unlock"><h1>Bookmark</h1><p class="lede">This shelf is locked. This browser stays signed in.</p><label for="password">Key</label><input id="password" name="password" type="password" autocomplete="current-password" required autofocus><p id="notice" class="notice" role="status">${esc(state.error)}</p><div class="form-actions"><button type="submit">Open</button></div></form>`;
+      }
+
+      function render() {
+        hideFloats();
+        const nav = document.querySelector(".menu-views");
+        const tags = document.getElementById("tags");
+        if (state.loadError) {
+          nav.hidden = true;
+          tags.hidden = true;
+          document.getElementById("lock").hidden = true;
+          document.getElementById("search").hidden = true;
+          document.title = "Bookmark";
+          main.innerHTML = `<p class="lede">${esc(state.loadError)}</p>`;
+          return;
+        }
+        if (state.locked) {
+          nav.hidden = true;
+          tags.hidden = true;
+          document.getElementById("lock").hidden = true;
+          document.getElementById("search").hidden = true;
+          document.title = "Bookmark";
+          renderLock();
+          return;
+        }
+        nav.hidden = false;
+        document.getElementById("lock").hidden = !state.sealed;
+        const route = readRoute();
+        const key = [route.view, route.tag, route.topic, route.query, route.articleId, route.quoteId].join(":");
+        const changed = key !== lastKey;
+        if (changed) state.error = "";
+        lastKey = key;
+        Object.assign(state, route);
+        const articles = shelfArticles();
+        document.querySelectorAll(".menu-views a").forEach((link) => {
+          const name = link.dataset.view;
+          const on =
+            name === "quotes"
+              ? state.view === "quotes"
+              : name === "save"
+                ? state.view === "save"
+                : state.view === "articles" || state.view === "read";
+          if (on) link.setAttribute("aria-current", "page");
+          else link.removeAttribute("aria-current");
+        });
+        renderTags(articles);
+        const searchBox = document.getElementById("search");
+        if (searchBox) {
+          searchBox.hidden = false;
+          if (document.activeElement !== searchBox) searchBox.value = state.view === "search" ? state.query : "";
+        }
+        if (state.view === "search") {
+          document.title = "Search · Bookmark";
+          renderSearch(articles);
+        } else if (state.view === "quotes") {
+          document.title = "Quotes · Bookmark";
+          renderQuotes(articles);
+        } else if (state.view === "save") {
+          document.title = "Save a piece · Bookmark";
+          renderSave();
+        } else if (state.view === "read") {
+          const article = articleById(state.articleId);
+          document.title = article ? article.title + " · Bookmark" : "Bookmark";
+          renderReader(article);
+        } else {
+          document.title = "Bookmark";
+          renderArticles(articles);
+        }
+        if (changed && state.view === "read" && state.quoteId) {
+          /* the kept line scrolls itself into place */
+        } else if (changed && state.view === "read") {
+          resumeReading();
+        } else if (changed) {
+          window.scrollTo(0, 0);
+        }
+      }
+
+      async function api(body) {
+        const res = await fetch("/api/bookmark", {
+          method: body ? "POST" : "GET",
+          headers: {
+            accept: "application/json",
+            ...(body ? { "content-type": "application/json" } : {}),
+          },
+          body: body ? JSON.stringify(body) : undefined,
+        });
+        let data = {};
+        try {
+          data = await res.json();
+        } catch {
+          data = {};
+        }
+        if (res.status === 401 && data.locked) {
+          state.locked = true;
+          state.step = data.step || state.step || "";
+          state.articles = [];
+          state.quotes = [];
+          return data;
+        }
+        if (!res.ok) throw new Error(data.error || "The shelf didn't answer.");
+        if (data.step === "code") {
+          state.locked = true;
+          state.step = "code";
+          return data;
+        }
+        if (data.locked) {
+          state.locked = true;
+          state.step = "";
+          state.articles = [];
+          state.quotes = [];
+          return data;
+        }
+        state.locked = false;
+        state.step = "";
+        if (typeof data.sealed === "boolean") state.sealed = data.sealed;
+        if (Array.isArray(data.articles)) state.articles = data.articles;
+        if (Array.isArray(data.quotes)) state.quotes = data.quotes;
+        return data;
+      }
+
+      function say(message) {
+        state.error = message || "";
+        const notice = document.getElementById("notice");
+        if (notice) notice.textContent = state.error;
+      }
+
+      async function load() {
+        try {
+          await api();
+          state.loadError = "";
+        } catch (error) {
+          state.loadError = error.message || "The shelf didn't open.";
+        }
+      }
+
+      function scrollToHeading(heading) {
+        const margin = parseFloat(getComputedStyle(heading).scrollMarginTop) || 0;
+        const target = heading.getBoundingClientRect().top + window.scrollY - margin;
+        const start = window.scrollY;
+        const change = target - start;
+        if (Math.abs(change) < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          window.scrollTo(0, target);
+          return;
+        }
+        const duration = Math.min(680, Math.max(320, Math.abs(change) * 0.28));
+        const began = performance.now();
+        function step(now) {
+          const t = Math.min(1, (now - began) / duration);
+          const eased = 1 - Math.pow(1 - t, 3);
+          window.scrollTo(0, start + change * eased);
+          if (t < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+
+      main.addEventListener("error", (event) => {
+        const img = event.target;
+        if (img instanceof HTMLImageElement && img.classList.contains("piece-preview")) img.remove();
+        if (img instanceof HTMLImageElement && img.classList.contains("story-photo")) {
+          const letter = document.createElement("span");
+          letter.className = "story-letter";
+          letter.textContent = img.dataset.letter || "";
+          img.replaceWith(letter);
+        }
+      }, true);
+
+      main.addEventListener("click", async (event) => {
+        const groupButton = event.target.closest("[data-group]");
+        if (groupButton) {
+          state.quoteGroup = groupButton.dataset.group === "piece" ? "piece" : "theme";
+          try {
+            localStorage.setItem("bookmark-quote-group", state.quoteGroup);
+          } catch {
+            /* the choice still applies for this visit */
+          }
+          render();
+          return;
+        }
+        const sectionLink = event.target.closest("[data-section]");
+        if (sectionLink) {
+          event.preventDefault();
+          const heading = document.getElementById(sectionLink.dataset.section);
+          if (heading) scrollToHeading(heading);
+          return;
+        }
+        const mark = event.target.closest("mark");
+        if (mark && mark.closest("#body")) {
+          showNote(mark);
+          return;
+        }
+        const button = event.target.closest("[data-act]");
+        if (!button) return;
+        const act = button.dataset.act;
+        if (act === "restart") {
+          state.step = "";
+          state.error = "";
+          render();
+          return;
+        }
+        if (act === "untag") {
+          try {
+            await api({ kind: "untag", articleId: state.articleId, tag: button.dataset.tag });
+            render();
+          } catch (error) {
+            say(error.message);
+          }
+          return;
+        }
+        if (act === "remove") {
+          if (button.dataset.sure !== "yes") {
+            button.dataset.sure = "yes";
+            button.textContent = "Remove this piece?";
+            return;
+          }
+          try {
+            await api({ kind: "remove", articleId: state.articleId });
+            location.hash = "#articles";
+          } catch (error) {
+            say(error.message);
+          }
+        }
+      });
+
+      main.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && event.target instanceof HTMLInputElement && event.target.name === "tag") {
+          event.preventDefault();
+          event.target.form.requestSubmit();
+          return;
+        }
+        const mark = event.target.closest && event.target.closest("mark");
+        if (!mark) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          mark.click();
+        }
+      });
+
+      function linkFromDrop(data) {
+        const raw = data.getData("text/uri-list") || data.getData("text/plain") || "";
+        return raw
+          .split(/\s+/)
+          .map((part) => part.trim())
+          .find((part) => part && !part.startsWith("#")) || "";
+      }
+
+      main.addEventListener("dragstart", (event) => {
+        const row = event.target.closest && event.target.closest("[data-article]");
+        if (!row) return;
+        event.dataTransfer.setData("text/plain", row.dataset.article);
+        event.dataTransfer.effectAllowed = "move";
+        row.classList.add("dragging");
+      });
+
+      main.addEventListener("dragend", (event) => {
+        const row = event.target.closest && event.target.closest("[data-article]");
+        if (row) row.classList.remove("dragging");
+        document.querySelectorAll(".folder-drop").forEach((link) => link.classList.remove("folder-drop"));
+      });
+
+      const folders = document.getElementById("tags");
+      folders.addEventListener("dragover", (event) => {
+        const link = event.target.closest && event.target.closest("[data-folder]");
+        if (!link) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+        folders.querySelectorAll(".folder-drop").forEach((item) => {
+          if (item !== link) item.classList.remove("folder-drop");
+        });
+        link.classList.add("folder-drop");
+      });
+
+      folders.addEventListener("dragleave", (event) => {
+        const link = event.target.closest && event.target.closest("[data-folder]");
+        if (!link || link.contains(event.relatedTarget)) return;
+        link.classList.remove("folder-drop");
+      });
+
+      folders.addEventListener("drop", async (event) => {
+        const link = event.target.closest && event.target.closest("[data-folder]");
+        if (!link) return;
+        event.preventDefault();
+        link.classList.remove("folder-drop");
+        const articleId = event.dataTransfer.getData("text/plain");
+        if (!articleId || !link.dataset.folder) return;
+        try {
+          await api({ kind: "file", articleId, folder: link.dataset.folder });
+          state.error = "";
+          render();
+        } catch (error) {
+          say(error.message);
+        }
+      });
+
+      main.addEventListener("dragover", (event) => {
+        const form = event.target.closest && event.target.closest("form[data-act='save']");
+        if (!form) return;
+        event.preventDefault();
+        const input = form.querySelector("input[name='url']");
+        if (input) input.classList.add("dropping");
+      });
+
+      main.addEventListener("dragleave", (event) => {
+        const input = event.target.closest && event.target.closest("input[name='url']");
+        if (input) input.classList.remove("dropping");
+      });
+
+      main.addEventListener("drop", (event) => {
+        const form = event.target.closest && event.target.closest("form[data-act='save']");
+        if (!form) return;
+        event.preventDefault();
+        const input = form.querySelector("input[name='url']");
+        if (input) input.classList.remove("dropping");
+        const link = linkFromDrop(event.dataTransfer);
+        if (!input || !link) return;
+        input.value = link;
+        form.requestSubmit();
+      });
+
+      main.addEventListener("paste", (event) => {
+        const input = event.target;
+        if (!(input instanceof HTMLInputElement) || input.name !== "url") return;
+        const text = (event.clipboardData && event.clipboardData.getData("text") || "").trim();
+        if (!/^https?:\/\/\S+$/i.test(text)) return;
+        event.preventDefault();
+        input.value = text;
+        if (input.form) input.form.requestSubmit();
+      });
+
+      main.addEventListener("submit", async (event) => {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement)) return;
+        event.preventDefault();
+        const submit = form.querySelector("button[type='submit']");
+        if (submit) {
+          submit.disabled = true;
+          if (form.dataset.act === "save") {
+            submit.dataset.label = submit.textContent;
+            submit.textContent = "Reading…";
+          }
+        }
+        try {
+          if (form.dataset.act === "tag") {
+            const tag = new FormData(form).get("tag");
+            await api({ kind: "tag", articleId: state.articleId, tag });
+            state.error = "";
+            render();
+            return;
+          }
+          if (form.dataset.act === "save") {
+            const fields = Object.fromEntries(new FormData(form).entries());
+            const data = await api({ kind: "save", ...fields });
+            const id = data.article && data.article.id;
+            if (id) location.hash = hash(["read", id]);
+            else render();
+            return;
+          }
+          if (form.dataset.act === "unlock") {
+            const password = new FormData(form).get("password");
+            const data = await api({ kind: "unlock", password });
+            if (data.step === "code") {
+              state.error = "";
+              render();
+              return;
+            }
+            await load();
+            state.error = "";
+            render();
+            return;
+          }
+          if (form.dataset.act === "code") {
+            const code = new FormData(form).get("code");
+            await api({ kind: "code", code });
+            await load();
+            state.error = "";
+            render();
+            return;
+          }
+        } catch (error) {
+          say(error.message);
+          if (submit) {
+            submit.disabled = false;
+            if (submit.dataset.label) submit.textContent = submit.dataset.label;
+          }
+        }
+      });
+
+      function selectionText(range, body) {
+        const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT);
+        const parts = [];
+        let lastBlock = null;
+        let node;
+        while ((node = walker.nextNode())) {
+          if (!range.intersectsNode(node) || !node.nodeValue) continue;
+          let start = 0;
+          let end = node.nodeValue.length;
+          if (node === range.startContainer) start = range.startOffset;
+          if (node === range.endContainer) end = range.endOffset;
+          if (end <= start) continue;
+          const slice = node.nodeValue.slice(start, end);
+          if (!slice) continue;
+          const block = node.parentElement && node.parentElement.closest("p, h2, li, figcaption, blockquote");
+          if (parts.length && block !== lastBlock) parts.push(" ");
+          lastBlock = block;
+          parts.push(slice);
+        }
+        return parts.join("").replace(/\s+/g, " ").trim();
+      }
+
+      function selectedLine() {
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed || selection.rangeCount === 0) return null;
+        const range = selection.getRangeAt(0);
+        const body = document.getElementById("body");
+        if (!body) return null;
+        const startEl = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
+        const endEl = range.endContainer.nodeType === 1 ? range.endContainer : range.endContainer.parentElement;
+        if (!startEl || !endEl || !body.contains(startEl) || !body.contains(endEl)) return null;
+        if (startEl.closest("mark") || endEl.closest("mark")) return null;
+        const text = selectionText(range, body);
+        if (text.length < 2 || text.length > 8000 || !/[A-Za-z0-9]/.test(text)) return null;
+        const article = articleById(state.articleId);
+        if (!article || !passageOf(article).includes(text)) return null;
+        if (state.quotes.some((quote) => quote.articleId === article.id && quote.text === text)) return null;
+        const rects = range.getClientRects();
+        const rect = rects[rects.length - 1];
+        if (!rect || (!rect.width && !rect.height)) return null;
+        return { text, rect };
+      }
+
+      function placePair(rect) {
+        const gap = 8;
+        const total = keep.offsetWidth + gap + letgo.offsetWidth;
+        const left = Math.min(Math.max(8, rect.left), window.innerWidth - total - 8);
+        const above = rect.top > 56;
+        const top = above ? rect.top : rect.bottom + 8;
+        const transform = above ? "translate(0, calc(-100% - 8px))" : "none";
+        keep.style.left = left + "px";
+        keep.style.top = top + "px";
+        keep.style.transform = transform;
+        letgo.style.left = left + keep.offsetWidth + gap + "px";
+        letgo.style.top = top + "px";
+        letgo.style.transform = transform;
+      }
+
+      function showNote(mark) {
+        const id = mark.dataset.quote || "";
+        if (!id) return;
+        const rects = mark.getClientRects();
+        const rect = rects[0] || mark.getBoundingClientRect();
+        keep.dataset.quote = id;
+        keepText = "";
+        letgo.dataset.id = id;
+        const ink = mark.dataset.ink || "yellow";
+        keep.querySelectorAll("[data-ink]").forEach((pen) => {
+          if (pen.dataset.ink === ink) pen.setAttribute("aria-pressed", "true");
+          else pen.removeAttribute("aria-pressed");
+        });
+        keep.hidden = false;
+        letgo.hidden = false;
+        placePair(rect);
+      }
+
+      function placeFloat(button, rect) {
+        const width = button.offsetWidth || 160;
+        const left = Math.min(Math.max(8, rect.left), window.innerWidth - width - 8);
+        button.style.left = left + "px";
+        if (rect.top > 56) {
+          button.style.top = rect.top + "px";
+          button.style.transform = "translate(0, calc(-100% - 8px))";
+          return;
+        }
+        button.style.top = rect.bottom + 8 + "px";
+        button.style.transform = "none";
+      }
+
+      function considerSelection() {
+        if (state.view !== "read" || state.locked) {
+          hideFloats();
+          return;
+        }
+        const found = selectedLine();
+        if (!found) {
+          if (!keep.dataset.quote) {
+            keep.hidden = true;
+            keepText = "";
+          }
+          return;
+        }
+        delete keep.dataset.quote;
+        letgo.hidden = true;
+        keep.querySelectorAll("[aria-pressed]").forEach((pen) => pen.removeAttribute("aria-pressed"));
+        keepText = found.text;
+        keep.hidden = false;
+        placeFloat(keep, found.rect);
+      }
+
+      document.addEventListener("mouseup", () => setTimeout(considerSelection, 0));
+      document.addEventListener("selectionchange", () => {
+        if (state.view !== "read") return;
+        setTimeout(considerSelection, 0);
+      });
+      window.addEventListener("scroll", () => {
+        if (keep.hidden) return;
+        if (keep.dataset.quote) {
+          const mark = document.querySelector(`#body mark[data-quote="${CSS.escape(keep.dataset.quote)}"]`);
+          const rect = mark && (mark.getClientRects()[0] || mark.getBoundingClientRect());
+          if (!rect || !rect.width) {
+            hideFloats();
+            return;
+          }
+          placePair(rect);
+          return;
+        }
+        considerSelection();
+      }, { passive: true });
+      let placeTimer = 0;
+      window.addEventListener("scroll", () => {
+        if (state.view !== "read") return;
+        clearTimeout(placeTimer);
+        placeTimer = setTimeout(rememberPlace, 280);
+      }, { passive: true });
+      window.addEventListener("pagehide", rememberPlace);
+      document.addEventListener("mousedown", (event) => {
+        if (event.target.closest("#keep, #letgo, mark")) return;
+        hideFloats();
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") hideFloats();
+      });
+      keep.addEventListener("mousedown", (event) => event.preventDefault());
+      letgo.addEventListener("mousedown", (event) => event.preventDefault());
+      keep.addEventListener("click", async (event) => {
+        const pen = event.target.closest("[data-ink]");
+        if (!pen) return;
+        const ink = pen.dataset.ink;
+        const quoteId = keep.dataset.quote || "";
+        const text = keepText;
+        const articleId = state.articleId;
+        const same = pen.getAttribute("aria-pressed") === "true";
+        hideFloats();
+        window.getSelection()?.removeAllRanges();
+        if (quoteId) {
+          if (same) return;
+          try {
+            await api({ kind: "ink", id: quoteId, ink });
+            state.error = "";
+            render();
+          } catch (error) {
+            say(error.message);
+          }
+          return;
+        }
+        if (!text || !articleId) return;
+        try {
+          await api({ kind: "keep", articleId, text, ink });
+          state.error = "";
+          render();
+        } catch (error) {
+          say(error.message);
+        }
+      });
+      letgo.addEventListener("click", async () => {
+        const id = letgo.dataset.id;
+        hideFloats();
+        if (!id) return;
+        try {
+          await api({ kind: "let-go", id });
+          state.error = "";
+          render();
+        } catch (error) {
+          say(error.message);
+        }
+      });
+
+      const searchForm = document.querySelector(".search");
+      const searchBox = document.getElementById("search");
+      searchForm.addEventListener("submit", (event) => event.preventDefault());
+      searchBox.addEventListener("input", () => {
+        const query = searchBox.value.trim();
+        const next = query ? hash(["search", query]) : "#articles";
+        if (location.hash !== next) location.hash = next;
+      });
+      searchBox.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") return;
+        searchBox.value = "";
+        if (location.hash !== "#articles") location.hash = "#articles";
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return;
+        const typing = document.activeElement && document.activeElement.closest("input, textarea");
+        if (typing || searchBox.hidden) return;
+        event.preventDefault();
+        searchBox.focus();
+      });
+
+      document.getElementById("lock").addEventListener("click", async () => {
+        try {
+          await api({ kind: "logout" });
+          render();
+        } catch (error) {
+          say(error.message);
+        }
+      });
+
+      document.getElementById("tags").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-rank]");
+        if (!button) return;
+        state.folderOrder = button.dataset.rank === "recent" ? "recent" : "alpha";
+        try {
+          localStorage.setItem("bookmark-folder-rank", state.folderOrder);
+        } catch {
+          /* the choice still applies for this visit */
+        }
+        if (state.view === "quotes") render();
+        else renderTags(shelfArticles());
+      });
+
+      load().then(() => {
+        render();
+        window.addEventListener("hashchange", () => {
+          rememberPlace();
+          render();
+        });
+      });
+    </script>
+  </body>
+</html>
