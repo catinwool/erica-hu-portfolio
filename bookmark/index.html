@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..720;1,7..72,200..720&family=Source+Sans+3:ital,wght@0,400;0,560;1,400&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..720;1,7..72,200..720&family=Source+Sans+3:ital,wght@0,400;0,560;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=swap"
       rel="stylesheet"
     />
     <style>
@@ -405,6 +405,20 @@
         margin-top: 0.15rem;
       }
 
+      .byline {
+        grid-column: 1 / -1;
+        margin: 0.12rem 0 0;
+        color: var(--ink);
+        font-style: italic;
+        font-size: 1.12rem;
+        line-height: 1.3;
+      }
+
+      .reader .byline {
+        margin: 0.35rem 0 0;
+        font-size: 1.35rem;
+      }
+
       .quotes p {
         margin: 0;
         font-style: italic;
@@ -634,6 +648,10 @@
         color: var(--accent);
       }
 
+      .body {
+        font-family: "Source Serif 4", "Iowan Old Style", Palatino, Georgia, serif;
+      }
+
       .body h2 {
         margin: 2.15rem 0 0.7rem;
         font-size: 1.35rem;
@@ -662,6 +680,14 @@
         font-size: 1.2rem;
         line-height: 1.68;
         overflow-wrap: break-word;
+      }
+
+      .body strong {
+        font-weight: 680;
+      }
+
+      .body em {
+        font-style: italic;
       }
 
       .body figure {
@@ -860,10 +886,19 @@
         display: none;
       }
 
+      .piece-actions {
+        display: flex;
+        gap: 1.15rem;
+        margin: 0.45rem 0 0;
+      }
+
       .remove-piece {
-        margin-top: 2.4rem;
         color: var(--ink-faint);
         font-style: italic;
+      }
+
+      .remove-piece[data-sure="yes"] {
+        color: var(--accent);
       }
 
       .stack label {
@@ -1283,13 +1318,21 @@
         nav.innerHTML = `<div class="menu-label-row"><p class="menu-label">${label}</p><p class="folder-rank"><button type="button" data-rank="alpha" aria-pressed="${rank === "alpha" ? "true" : "false"}">A–Z</button><button type="button" data-rank="recent" aria-pressed="${rank === "recent" ? "true" : "false"}">Recent</button></p></div>${live.map(link).join("")}${archiveBlock}`;
       }
 
+      function readingTime(article) {
+        const words = (article.paragraphs || []).join(" ").trim().split(/\s+/).filter(Boolean).length;
+        if (words < 40) return "";
+        const minutes = Math.max(1, Math.round(words / 250));
+        return minutes === 1 ? "1 min" : minutes + " min";
+      }
+
       function sourceBits(article) {
         const bits = [];
-        if (article.author) bits.push(article.author);
         if (article.site) bits.push(article.site);
         if (article.sample) bits.push("Sample");
         const date = when(article.savedAt);
         if (date) bits.push(date);
+        const minutes = readingTime(article);
+        if (minutes) bits.push(minutes);
         return bits;
       }
 
@@ -1305,22 +1348,66 @@
         return words.every((word) => hay.includes(word));
       }
 
+      function iconImage(src) {
+        const name = String(src || "");
+        const width = name.match(/(?:[,&/_])w_(\d+)/);
+        const height = name.match(/(?:[,&/_])h_(\d+)/);
+        const file = name.match(/_(\d{2,5})x(\d{2,5})\./);
+        const w = width ? Number(width[1]) : 0;
+        const h = height ? Number(height[1]) : 0;
+        const fileWidth = file ? Number(file[1]) : 0;
+        const fileHeight = file ? Number(file[2]) : 0;
+        if (w && h && w <= 160 && h <= 160) return true;
+        if (w && w <= 140 && !h) return true;
+        if (h && h <= 140 && !w) return true;
+        if (w && h && h <= 140 && w <= 240) return true;
+        if (fileHeight && fileHeight < 180 && fileWidth / fileHeight > 4) return true;
+        return false;
+      }
+
+      function logoImage(src, alt) {
+        const name = String(src || "").toLowerCase();
+        const label = String(alt || "").toLowerCase();
+        if (iconImage(name)) return true;
+        if (/\.svg(?:$|\?)/.test(name) && label.length < 12) return true;
+        if (/\blogo\b|logotype|wordmark|favicon|apple-touch|site-icon|avatar/.test(name + " " + label)) return true;
+        if (/\bicon\b/.test(label) && label.length < 48) return true;
+        return false;
+      }
+
+      function sameName(left, right) {
+        const plain = (value) =>
+          String(value || "")
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, " ")
+            .trim();
+        const a = plain(left);
+        const b = plain(right);
+        return a.length > 2 && a === b;
+      }
+
       function previewOf(article) {
         const blocks = article.blocks || [];
-        return blocks.find((block) => block && block.image) || null;
+        return (
+          blocks.find(
+            (block) => block && block.image && !logoImage(block.image, block.alt) && !sameName(block.alt, article.author)
+          ) || null
+        );
       }
 
       function pieceRow(article) {
         const bits = [];
-        if (article.author) bits.push(article.author);
         if (article.site) bits.push(article.site);
+        const minutes = readingTime(article);
+        if (minutes) bits.push(minutes);
         const source = bits.join(" · ");
         const tags = (article.tags || []).join(" · ");
         const preview = previewOf(article);
         const image = preview
           ? `<img class="piece-preview" src="${esc(preview.image)}" alt="${esc(preview.alt || "")}" referrerpolicy="no-referrer">`
           : "";
-        return `<li><a draggable="true" data-article="${esc(article.id)}" href="${hash(["read", article.id])}">${image}<span class="piece-title">${esc(article.title)}</span><time datetime="${esc(article.savedAt)}">${esc(when(article.savedAt))}</time>${source ? `<span class="piece-source">${esc(source)}</span>` : ""}${tags ? `<span class="piece-tags">${esc(tags)}</span>` : ""}</a></li>`;
+        const byline = article.author ? `<span class="byline">${esc(article.author)}</span>` : "";
+        return `<li><a draggable="true" data-article="${esc(article.id)}" href="${hash(["read", article.id])}">${image}<span class="piece-title">${esc(article.title)}</span><time datetime="${esc(article.savedAt)}">${esc(when(article.savedAt))}</time>${byline}${source ? `<span class="piece-source">${esc(source)}</span>` : ""}${tags ? `<span class="piece-tags">${esc(tags)}</span>` : ""}</a></li>`;
       }
 
       function quoteRow(quote, article, gathered) {
@@ -1406,7 +1493,7 @@
             const face = preview
               ? `<img class="story-photo" src="${esc(preview.image)}" alt="" data-letter="${esc(letter)}" referrerpolicy="no-referrer">`
               : `<span class="story-letter">${esc(letter)}</span>`;
-            return `<li><a href="${hash(["read", article.id])}"><span class="story"><span class="story-face">${face}</span></span><span class="story-title">${esc(article.title)}</span></a></li>`;
+            return `<li><a href="${hash(["read", article.id])}" data-reading="${esc(article.id)}" title="Right-click to drop this"><span class="story"><span class="story-face">${face}</span></span><span class="story-title">${esc(article.title)}</span></a></li>`;
           })
           .join("");
         return `<section class="continue" aria-label="Continue reading"><p class="menu-label">Continue reading</p><ul>${items}</ul></section>`;
@@ -1563,12 +1650,41 @@
         main.innerHTML = `${rank}<ul class="books">${list(live)}${list(loose)}</ul>${archiveBlock}`;
       }
 
+      function fillRich(node, value) {
+        const text = String(value || "");
+        if (!/[\uE000-\uE003]/.test(text)) {
+          node.textContent = text;
+          return;
+        }
+        node.textContent = "";
+        const stack = [node];
+        let buf = "";
+        const flush = () => {
+          if (!buf) return;
+          stack[stack.length - 1].appendChild(document.createTextNode(buf));
+          buf = "";
+        };
+        for (const ch of text) {
+          if (ch === "\uE000" || ch === "\uE002") {
+            flush();
+            const el = document.createElement(ch === "\uE000" ? "strong" : "em");
+            stack[stack.length - 1].appendChild(el);
+            stack.push(el);
+          } else if (ch === "\uE001" || ch === "\uE003") {
+            flush();
+            if (stack.length > 1) stack.pop();
+          } else buf += ch;
+        }
+        flush();
+      }
+
       function renderReader(article) {
         if (!article) {
           main.innerHTML = `<a class="back" href="#articles">Shelf</a><p class="empty">That piece isn't on the shelf.</p>`;
           return;
         }
         const bits = sourceBits(article);
+        const byline = article.author ? `<p class="byline">${esc(article.author)}</p>` : "";
         const folderName = article.folder ? folderLabel(article.folder) || "Archive" : "";
         const folderLink = folderName
           ? `<p class="meta"><a href="${hash(["articles", article.folder])}">In ${esc(folderName)}</a></p>`
@@ -1580,8 +1696,9 @@
           )
           .join("");
         const original = article.url
-          ? `<p class="meta"><a class="original" href="${esc(article.url)}" target="_blank" rel="noreferrer">Original</a></p>`
+          ? `<a class="original" href="${esc(article.url)}" target="_blank" rel="noreferrer">Original</a>`
           : "";
+        const actions = `<p class="piece-actions">${original}<button type="button" class="remove-piece" data-act="remove">Remove</button></p>`;
         const blocks = article.blocks && article.blocks.length ? article.blocks : article.paragraphs || [];
         const sections = [];
         blocks.forEach((block) => {
@@ -1602,7 +1719,7 @@
                 )
                 .join("")}</ol></nav>`
             : "";
-        main.innerHTML = `<article class="reader"><a class="back" href="#articles">Shelf</a><h1 draggable="true" data-article="${esc(article.id)}">${esc(article.title)}</h1>${bits.length ? `<p class="meta">${esc(bits.join(" · "))}</p>` : ""}${folderLink}${original}<div class="tagline"><ul>${tags}</ul><form data-act="tag"><input name="tag" aria-label="Add a tag" placeholder="Add a tag" maxlength="32" autocomplete="off"></form></div>${contents}<div class="body" id="body"></div><p id="notice" class="notice" role="status">${esc(state.error)}</p><button type="button" class="remove-piece" data-act="remove">Remove from shelf</button></article>`;
+        main.innerHTML = `<article class="reader"><a class="back" href="#articles">Shelf</a><h1 draggable="true" data-article="${esc(article.id)}">${esc(article.title)}</h1>${byline}${bits.length ? `<p class="meta">${esc(bits.join(" · "))}</p>` : ""}${folderLink}${actions}<div class="tagline"><ul>${tags}</ul><form data-act="tag"><input name="tag" aria-label="Add a tag" placeholder="Add a tag" maxlength="32" autocomplete="off"></form></div>${contents}<div class="body" id="body"></div><p id="notice" class="notice" role="status">${esc(state.error)}</p></article>`;
         const body = document.getElementById("body");
         const paragraphs = article.paragraphs || [];
         const kept = state.quotes
@@ -1636,11 +1753,12 @@
               node = document.createElement("h2");
               const section = sectionIds.shift();
               if (section) node.id = section.id;
-              node.textContent = block.heading;
+              fillRich(node, block.heading);
             } else if (block && typeof block === "object" && block.quote) {
               node = document.createElement("blockquote");
-              node.textContent = block.quote;
+              fillRich(node, block.quote);
             } else if (block && typeof block === "object" && block.image) {
+              if (logoImage(block.image, block.alt)) continue;
               node = document.createElement("figure");
               const img = document.createElement("img");
               img.src = block.image;
@@ -1655,7 +1773,7 @@
               }
             } else {
               node = document.createElement("p");
-              node.textContent = block;
+              fillRich(node, block);
             }
             node.dataset.block = String(place);
             place += 1;
@@ -1676,9 +1794,9 @@
         const blocks = article.blocks && article.blocks.length ? article.blocks : article.paragraphs || [];
         const parts = [];
         for (const block of blocks) {
-          if (typeof block === "string" && block.trim()) parts.push(block.trim());
-          else if (block && block.heading) parts.push(String(block.heading).trim());
-          else if (block && block.quote) parts.push(String(block.quote).trim());
+          if (typeof block === "string" && block.trim()) parts.push(block.replace(/[\uE000-\uE003]/g, "").trim());
+          else if (block && block.heading) parts.push(String(block.heading).replace(/[\uE000-\uE003]/g, "").trim());
+          else if (block && block.quote) parts.push(String(block.quote).replace(/[\uE000-\uE003]/g, "").trim());
         }
         return parts.join(" ");
       }
@@ -1712,9 +1830,7 @@
           }
           let first = true;
           for (const hit of hits) {
-            const range = document.createRange();
-            range.setStart(hit.node, hit.start);
-            range.setEnd(hit.node, hit.end);
+            if (!hit.node.parentNode || hit.end <= hit.start || hit.end > hit.node.nodeValue.length) continue;
             const mark = document.createElement("mark");
             mark.dataset.quote = quote.id;
             mark.dataset.ink = quote.ink || "yellow";
@@ -1725,9 +1841,12 @@
               first = false;
             }
             try {
-              range.surroundContents(mark);
+              hit.node.splitText(hit.end);
+              const middle = hit.node.splitText(hit.start);
+              middle.parentNode.insertBefore(mark, middle);
+              mark.appendChild(middle);
             } catch {
-              break;
+              /* a later line can still take its color */
             }
           }
         }
@@ -1908,6 +2027,17 @@
         }
       }, true);
 
+      main.addEventListener("contextmenu", (event) => {
+        const story = event.target.closest && event.target.closest(".continue [data-reading]");
+        if (!story) return;
+        event.preventDefault();
+        const map = readingMap();
+        if (!map[story.dataset.reading]) return;
+        delete map[story.dataset.reading];
+        saveReading(map);
+        render();
+      });
+
       main.addEventListener("click", async (event) => {
         const groupButton = event.target.closest("[data-group]");
         if (groupButton) {
@@ -1962,7 +2092,13 @@
             return;
           }
           try {
-            await api({ kind: "remove", articleId: state.articleId });
+            const id = state.articleId;
+            await api({ kind: "remove", articleId: id });
+            const map = readingMap();
+            if (map[id]) {
+              delete map[id];
+              saveReading(map);
+            }
             location.hash = "#articles";
           } catch (error) {
             say(error.message);

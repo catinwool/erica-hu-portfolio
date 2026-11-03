@@ -697,8 +697,72 @@ function absoluteUrl(value, base) {
   }
 }
 
+function pictureSize(src) {
+  const name = String(src || "");
+  const width = name.match(/(?:[,&/_])w_(\d+)/);
+  const height = name.match(/(?:[,&/_])h_(\d+)/);
+  const file = name.match(/_(\d{2,5})x(\d{2,5})\./);
+  return {
+    width: width ? Number(width[1]) : 0,
+    height: height ? Number(height[1]) : 0,
+    fileWidth: file ? Number(file[1]) : 0,
+    fileHeight: file ? Number(file[2]) : 0,
+  };
+}
+
+function iconImage(src) {
+  const size = pictureSize(src);
+  if (size.width && size.height && size.width <= 160 && size.height <= 160) return true;
+  if (size.width && size.width <= 140 && !size.height) return true;
+  if (size.height && size.height <= 140 && !size.width) return true;
+  if (size.width && size.height && size.height <= 140 && size.width <= 240) return true;
+  if (size.fileHeight && size.fileHeight < 180 && size.fileWidth / size.fileHeight > 4) return true;
+  return false;
+}
+
+function logoImage(src, alt) {
+  const name = String(src || "").toLowerCase();
+  const label = String(alt || "").toLowerCase();
+  if (iconImage(name)) return true;
+  if (/\.svg(?:$|\?)/.test(name) && label.length < 12) return true;
+  if (/\blogo\b|logotype|wordmark|favicon|apple-touch|site-icon|avatar/.test(name + " " + label)) return true;
+  if (/\bicon\b/.test(label) && label.length < 48) return true;
+  return false;
+}
+
+function plainName(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function authorPortrait(src, alt, author) {
+  const name = plainName(author);
+  const label = plainName(alt);
+  if (name.length > 2 && label === name) return true;
+  const file = String(src || "").toLowerCase();
+  if (!/headshot|byline|avatar|author[-_]?photo|blurple/.test(file)) return false;
+  const parts = name.split(" ").filter((part) => part.length > 2);
+  return parts.some((part) => file.includes(part));
+}
+
+function spareImage(block, author) {
+  if (!block || !block.image) return false;
+  return logoImage(block.image, block.alt) || authorPortrait(block.image, block.alt, author);
+}
+
+function dropSavedMarks(library) {
+  for (const article of (library && library.articles) || []) {
+    if (!Array.isArray(article.blocks)) continue;
+    const next = article.blocks.filter((block) => !spareImage(block, article.author));
+    if (next.length !== article.blocks.length) article.blocks = next;
+  }
+}
+
 function decorativeImage(src, alt) {
   const name = String(src || "").toLowerCase();
+  if (logoImage(name, alt)) return true;
   if (/\.svg(?:$|\?)/.test(name) && !alt) return true;
   return /underline|frame-|\/logo|icon|sprite|\/share|plugin|pixel|spacer|badge|opengraph/.test(name);
 }
@@ -716,26 +780,71 @@ function imageFrom(node, pageUrl) {
 }
 
 function firstImage(document, pageUrl) {
-  const nodes = document.querySelectorAll("img");
-  for (const node of nodes) {
+  const candidates = [];
+  for (const node of document.querySelectorAll("img")) {
     if (node.closest("nav, header, footer")) continue;
     const image = imageFrom(node, pageUrl);
-    if (image && image.alt.length >= 8) return image;
+    if (image) candidates.push(image);
   }
-  return null;
+  const size = (image) => pictureSize(image.image);
+  return (
+    candidates.find((image) => size(image).width >= 400 || size(image).fileWidth >= 400) ||
+    candidates.find((image) => image.alt.length >= 8) ||
+    null
+  );
+}
+
+const BOLD_ON = "\uE000";
+const BOLD_OFF = "\uE001";
+const ITALIC_ON = "\uE002";
+const ITALIC_OFF = "\uE003";
+
+function plainOf(value) {
+  return String(value || "").replace(/[\uE000-\uE003]/g, "");
+}
+
+function faceOf(node) {
+  const tag = node.tagName;
+  const style = String((node.getAttribute && node.getAttribute("style")) || "");
+  const cls = String((node.getAttribute && node.getAttribute("class")) || "");
+  return {
+    bold: tag === "STRONG" || tag === "B" || /font-weight\s*:\s*(bold|[6-9]00)\b/i.test(style) || /(^|\s)(bold|font-bold)(\s|$)/i.test(cls),
+    italic: tag === "EM" || tag === "I" || /font-style\s*:\s*italic/i.test(style) || /(^|\s)(italic|font-italic)(\s|$)/i.test(cls),
+  };
+}
+
+function richText(node, state) {
+  const face = state || { bold: false, italic: false };
+  if (!node) return "";
+  if (node.nodeType === 3) return node.nodeValue || "";
+  if (node.nodeType !== 1) return "";
+  const tag = node.tagName;
+  if (tag === "SCRIPT" || tag === "STYLE" || tag === "NOSCRIPT" || tag === "SVG") return "";
+  if (tag === "BR") return " ";
+  const nextFace = faceOf(node);
+  const next = { bold: face.bold || nextFace.bold, italic: face.italic || nextFace.italic };
+  let out = "";
+  for (const child of node.childNodes) out += richText(child, next);
+  if (!plainOf(out).trim()) return out;
+  if (!face.bold && next.bold) out = BOLD_ON + out + BOLD_OFF;
+  if (!face.italic && next.italic) out = ITALIC_ON + out + ITALIC_OFF;
+  return out;
 }
 
 function headingText(value) {
-  const text = String(value || "").replace(/\s+/g, " ").trim();
+  const raw = String(value || "").replace(/\s+/g, " ").trim();
+  const text = plainOf(raw);
   if (text.length < 2 || text.length > 80) return "";
   if (/^_+$/.test(text) || /^fig(?:ure)?\.?\s*\d+/i.test(text)) return "";
-  return text;
+  return raw;
 }
 
 function pushText(blocks, paragraphs, value, heading) {
   const text = String(value || "").replace(/\s+/g, " ").trim();
-  if (text.length < 2 || (!heading && text.length < 20)) return;
-  if (/^(learn more|subscribe|sign up|share this|advertisement|cookie settings)$/i.test(text)) return;
+  const plain = plainOf(text);
+  const marked = text.includes(BOLD_ON) || text.includes(ITALIC_ON);
+  if (plain.length < 2 || (!heading && !marked && plain.length < 20)) return;
+  if (/^(learn more|subscribe|sign up|share this|advertisement|cookie settings)$/i.test(plain)) return;
   if (heading) {
     const title = headingText(text);
     if (title) {
@@ -762,7 +871,7 @@ function pushQuote(blocks, paragraphs, value) {
   const same = (other) => {
     const norm = (item) =>
       String(item || "")
-        .replace(/[\u200b-\u200d\ufeff\u00a0]/g, " ")
+        .replace(/[\u200b-\u200d\ufeff\u00a0\uE000-\uE003]/g, " ")
         .replace(/[“”]/g, '"')
         .replace(/[‘’]/g, "'")
         .replace(/\s+/g, " ")
@@ -796,7 +905,7 @@ function visitMixed(node, pageUrl, blocks, paragraphs) {
   for (const child of node.childNodes) {
     if (child.nodeType === 1 && child.tagName === "BLOCKQUOTE") {
       flush();
-      pushQuote(blocks, paragraphs, child.textContent);
+      pushQuote(blocks, paragraphs, richText(child));
       continue;
     }
     if (child.nodeType === 1 && child.tagName === "BR") {
@@ -808,7 +917,7 @@ function visitMixed(node, pageUrl, blocks, paragraphs) {
       visitMixed(child, pageUrl, blocks, paragraphs);
       continue;
     }
-    buffer += child.textContent || "";
+    buffer += richText(child);
   }
   flush();
 }
@@ -820,25 +929,57 @@ function pushImage(blocks, node, pageUrl) {
   blocks.push(image);
 }
 
+function listNumber(node) {
+  const parent = node.parentElement;
+  if (!parent || (parent.tagName !== "OL" && parent.tagName !== "UL")) return 0;
+  const items = [...parent.children].filter((child) => child.tagName === "LI");
+  const index = items.indexOf(node);
+  if (index < 0) return 0;
+  if (parent.tagName === "UL") return index + 1;
+  const start = Number(parent.getAttribute("start"));
+  const base = Number.isFinite(start) && start !== 0 ? start : 1;
+  const value = Number(node.getAttribute("value"));
+  if (Number.isFinite(value) && value !== 0) return value;
+  return base + index;
+}
+
+function numberListItem(blocks, paragraphs, before, number) {
+  if (!number) return;
+  const block = blocks[before];
+  if (typeof block !== "string") return;
+  const text = number + ". " + block.replace(/^(?:\d+[\.\)]\s+|[\u2022\-]\s+)/, "");
+  blocks[before] = text;
+  const at = paragraphs.lastIndexOf(block);
+  if (at >= 0) paragraphs[at] = text;
+}
+
 function visitPiece(node, pageUrl, blocks, paragraphs) {
   if (!node || node.nodeType !== 1) return;
   if (blocks.length >= 240 || paragraphs.length >= 200) return;
   const tag = node.tagName;
   if (tag === "SCRIPT" || tag === "STYLE" || tag === "NOSCRIPT" || tag === "SVG" || tag === "H1") return;
   if (tag === "IMG") return pushImage(blocks, node, pageUrl);
-  if (tag === "H2" || tag === "H3" || tag === "H4") return pushText(blocks, paragraphs, node.textContent, true);
-  if (tag === "BLOCKQUOTE") return pushQuote(blocks, paragraphs, node.textContent);
-  if ((tag === "P" || tag === "LI") && node.querySelector("blockquote")) {
+  if (tag === "H2" || tag === "H3" || tag === "H4") return pushText(blocks, paragraphs, richText(node), true);
+  if (tag === "BLOCKQUOTE") return pushQuote(blocks, paragraphs, richText(node));
+  if (tag === "LI") {
+    const before = blocks.length;
+    for (const child of node.childNodes) visitPiece(child, pageUrl, blocks, paragraphs);
+    if (blocks.length === before) {
+      const text = richText(node).replace(/^(?:\d+[\.\)]\s+|[\u2022\-]\s+)/, "");
+      pushText(blocks, paragraphs, text, false);
+    }
+    numberListItem(blocks, paragraphs, before, listNumber(node));
+    return;
+  }
+  if (tag === "P" && node.querySelector("blockquote")) {
     return visitMixed(node, pageUrl, blocks, paragraphs);
   }
-  if (tag === "P" || tag === "LI" || tag === "FIGCAPTION") {
+  if (tag === "P" || tag === "FIGCAPTION") {
     if (node.querySelector("p, li, h2, h3, h4, img, figure")) {
       for (const child of node.childNodes) visitPiece(child, pageUrl, blocks, paragraphs);
       return;
     }
-    let text = node.textContent;
-    if (tag === "LI") text = String(text).replace(/^[\u2022\-\d\.\)\s]+/, "");
-    return pushText(blocks, paragraphs, text, false);
+    return pushText(blocks, paragraphs, richText(node), false);
   }
   for (const child of node.childNodes) visitPiece(child, pageUrl, blocks, paragraphs);
 }
@@ -928,6 +1069,7 @@ async function parsePiece(html, pageUrl) {
   const site = cleanText(article.siteName, 120) || siteName || hostnameOf(pageUrl);
   const title = titleFrom(article.title, site);
   const author = cleanText(String(article.byline || metaAuthor).replace(/^by\s+/i, ""), 120);
+  piece.blocks = piece.blocks.filter((block) => !spareImage(block, author));
   const prose = piece.blocks.filter((block) => typeof block === "string" && block.length > 40);
   const proseChars = prose.reduce((sum, block) => sum + block.length, 0);
   if (!title || proseChars < 280 || (prose.length < 2 && proseChars < 400)) fail(400, "That page didn't give up a piece.");
@@ -979,10 +1121,11 @@ async function saveArticle(library, body) {
 function passageOf(article) {
   const source = Array.isArray(article.blocks) && article.blocks.length ? article.blocks : article.paragraphs;
   const parts = [];
+  const plain = (value) => String(value || "").replace(/[\uE000-\uE003]/g, "").trim();
   for (const block of source || []) {
-    if (typeof block === "string" && block.trim()) parts.push(block.trim());
-    else if (block && block.heading) parts.push(String(block.heading).trim());
-    else if (block && block.quote) parts.push(String(block.quote).trim());
+    if (typeof block === "string" && plain(block)) parts.push(plain(block));
+    else if (block && block.heading) parts.push(plain(block.heading));
+    else if (block && block.quote) parts.push(plain(block.quote));
   }
   return parts.join(" ");
 }
@@ -1207,3 +1350,5 @@ async function handler(req, res) {
 module.exports = handler;
 handler.suggestTags = suggestTags;
 handler.parsePiece = parsePiece;
+handler.readPage = readPage;
+handler.dropSavedMarks = dropSavedMarks;
