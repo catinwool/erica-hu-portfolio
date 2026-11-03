@@ -316,6 +316,11 @@ function cleanBlocks(value) {
       const text = cleanText(block, 5000);
       if (text) blocks.push(text);
     } else if (block && typeof block === "object") {
+      if (typeof block.poem === "string") {
+        const line = String(block.poem).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").slice(0, 5000);
+        blocks.push({ poem: line });
+        continue;
+      }
       const quote = cleanText(block.quote, 5000);
       if (quote) {
         blocks.push({ quote });
@@ -669,7 +674,9 @@ function shelfArticle(article) {
     tags: article.tags || [],
     sample: Boolean(article.sample),
     minutes: shelfMinutes(article),
-    prose: (article.paragraphs || []).some((line) => plainOf(line).length > 80),
+    prose:
+      (article.paragraphs || []).some((line) => plainOf(line).length > 80) ||
+      plainOf((article.paragraphs || []).join("")).replace(/\s+/g, "").length > 200,
     preview: shelfPreview(article),
   };
 }
@@ -1096,29 +1103,68 @@ function titleFrom(raw, site) {
   return cleanText(title, 180);
 }
 
-async function readPage(target) {
-  let res;
-  try {
-    res = await fetch(target, {
-      redirect: "follow",
-      signal: AbortSignal.timeout(12000),
-      headers: {
-        "user-agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-        accept: "text/html,application/xhtml+xml",
-      },
-    });
-  } catch {
-    fail(400, "That page didn't open.");
-  }
-  if (!res.ok) fail(400, "That page didn't open.");
-  const type = String(res.headers.get("content-type") || "");
+function blockedPage(res, html) {
+  const head = String(html || "").slice(0, 5000);
+  if (/cf-mitigated|challenges\.cloudflare\.com|Just a moment/i.test(head)) return true;
+  return !res || !res.ok;
+}
+
+async function fetchPage(target) {
+  const res = await fetch(target, {
+    redirect: "follow",
+    signal: AbortSignal.timeout(12000),
+    headers: {
+      "user-agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+      accept: "text/html,application/xhtml+xml",
+    },
+  });
   const html = await res.text();
-  if (html.length > 1500000) fail(413, "That page is too large to read.");
-  if (!/html|xml/i.test(type) && !/<\s*(html|body|article|p|div)\b/i.test(html.slice(0, 4000))) {
+  return { res, html, url: res.url || target };
+}
+
+async function readPage(target) {
+  let page = null;
+  try {
+    page = await fetchPage(target);
+  } catch {
+    page = null;
+  }
+  if (!page || blockedPage(page.res, page.html)) {
+    try {
+      const archived = await fetchPage("https://web.archive.org/web/2024/" + target);
+      if (archived.res.ok && !blockedPage(archived.res, archived.html)) page = { ...archived, url: target };
+    } catch {
+      /* the first page stands */
+    }
+  }
+  if (!page || blockedPage(page.res, page.html)) fail(400, "That page didn't open.");
+  const type = String(page.res.headers.get("content-type") || "");
+  if (page.html.length > 1500000) fail(413, "That page is too large to read.");
+  if (!/html|xml/i.test(type) && !/<\s*(html|body|article|p|div)\b/i.test(page.html.slice(0, 4000))) {
     fail(400, "That link isn't a page.");
   }
-  return { html, url: res.url || target };
+  return { html: page.html, url: page.url || target };
+}
+
+function poemLine(value) {
+  const text = String(value || "")
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\s+$/g, "");
+  if (!text.trim()) return "";
+  return text.replace(/^ +| {2,}/g, (gap) => "\u00a0".repeat(gap.length));
+}
+
+function poemFrom(document) {
+  const root = document.querySelector(".poem-body, .type-poem-text");
+  if (!root) return null;
+  const rows = [...root.children].filter((node) => node.tagName === "DIV" || node.tagName === "P");
+  const nodes = rows.length ? rows : [root];
+  const lines = nodes.map((node) => poemLine(node.textContent));
+  const prose = lines.join("").replace(/\u00a0/g, "").trim();
+  if (prose.length < 40) return null;
+  return lines;
 }
 
 async function parsePiece(html, pageUrl) {
@@ -1138,6 +1184,16 @@ async function parsePiece(html, pageUrl) {
   }
   const metaAuthor = cleanText(metaContent(document, 'meta[name="author"]'), 120);
   const siteName = cleanText(metaContent(document, 'meta[property="og:site_name"]'), 120);
+  const poem = poemFrom(document);
+  if (poem) {
+    const site = siteName || hostnameOf(pageUrl);
+    const title = titleFrom(metaContent(document, 'meta[property="og:title"]') || document.querySelector("h1")?.textContent, site);
+    const poet = document.querySelector('a[href*="/poets/"]');
+    const author = cleanText((poet && poet.textContent) || metaAuthor, 120);
+    if (!title) fail(400, "That page didn't give up a piece.");
+    const blocks = poem.map((line) => ({ poem: line }));
+    return { title, author, site, paragraphs: poem.map((line) => line || " "), blocks };
+  }
   let article = null;
   try {
     article = new Readability(document).parse();
@@ -1207,6 +1263,7 @@ function passageOf(article) {
     if (typeof block === "string" && plain(block)) parts.push(plain(block));
     else if (block && block.heading) parts.push(plain(block.heading));
     else if (block && block.quote) parts.push(plain(block.quote));
+    else if (block && typeof block.poem === "string") parts.push(plain(block.poem));
   }
   return parts.join(" ");
 }

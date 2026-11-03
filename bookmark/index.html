@@ -682,6 +682,14 @@
         overflow-wrap: break-word;
       }
 
+      .body p.poem {
+        white-space: pre-wrap;
+        margin: 0;
+        min-height: 1.45em;
+        font-size: 1.15rem;
+        line-height: 1.45;
+      }
+
       .body strong {
         font-weight: 680;
       }
@@ -1492,6 +1500,7 @@
 
       function hasProse(article) {
         if (article.prose) return true;
+        if ((article.blocks || []).some((block) => block && typeof block.poem === "string")) return true;
         return (article.paragraphs || []).some((line) => String(line).length > 80);
       }
 
@@ -1797,6 +1806,10 @@
               const section = sectionIds.shift();
               if (section) node.id = section.id;
               fillRich(node, block.heading);
+            } else if (block && typeof block === "object" && typeof block.poem === "string") {
+              node = document.createElement("p");
+              node.className = "poem";
+              fillRich(node, block.poem || "\u00a0");
             } else if (block && typeof block === "object" && block.quote) {
               node = document.createElement("blockquote");
               fillRich(node, block.quote);
@@ -1840,6 +1853,7 @@
           if (typeof block === "string" && block.trim()) parts.push(block.replace(/[\uE000-\uE003]/g, "").trim());
           else if (block && block.heading) parts.push(String(block.heading).replace(/[\uE000-\uE003]/g, "").trim());
           else if (block && block.quote) parts.push(String(block.quote).replace(/[\uE000-\uE003]/g, "").trim());
+          else if (block && typeof block.poem === "string" && block.poem.trim()) parts.push(block.poem.replace(/[\uE000-\uE003\u00a0]/g, " ").trim());
         }
         return parts.join(" ");
       }
