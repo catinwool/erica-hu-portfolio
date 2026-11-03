@@ -569,26 +569,23 @@ function tokenFrom(req) {
 }
 
 function blobAuth(token) {
+  const rw = String(process.env.BOOKMARK_BLOB_READ_WRITE_TOKEN || "").trim();
+  if (rw) return { token: rw };
   const auth = {};
-  const storeId = String(process.env.BLOB_STORE_ID || "").trim();
-  if (token) auth.oidcToken = token;
+  const storeId = String(process.env.BOOKMARK_BLOB_STORE_ID || "").trim();
+  const oidc = String(token || process.env.VERCEL_OIDC_TOKEN || "").trim();
+  if (oidc) auth.oidcToken = oidc;
   if (storeId) auth.storeId = storeId;
   return auth;
 }
 
-function useBlob(token) {
-  return Boolean(process.env.VERCEL || process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID || token);
+function useBlob() {
+  return Boolean(process.env.BOOKMARK_BLOB_READ_WRITE_TOKEN || process.env.BOOKMARK_BLOB_STORE_ID);
 }
 
 async function blobRead(token) {
   const { get } = require("@vercel/blob");
-  const auth = blobAuth(token);
-  let result;
-  try {
-    result = await get(BLOB_PATH, { access: "private", useCache: false, ...auth });
-  } catch {
-    result = await get(BLOB_PATH, { access: "public", useCache: false, ...auth });
-  }
+  const result = await get(BLOB_PATH, { access: "private", useCache: false, ...blobAuth(token) });
   if (!result || result.statusCode === 304 || !result.stream) return null;
   const text = await new Response(result.stream).text();
   return normalize(JSON.parse(text));
@@ -596,33 +593,35 @@ async function blobRead(token) {
 
 async function blobWrite(body, token) {
   const { put } = require("@vercel/blob");
-  const auth = blobAuth(token);
-  const options = {
+  await put(BLOB_PATH, body, {
+    access: "private",
     addRandomSuffix: false,
     allowOverwrite: true,
     contentType: "application/json",
     cacheControlMaxAge: 60,
-    ...auth,
-  };
-  try {
-    await put(BLOB_PATH, body, { access: "private", ...options });
-  } catch {
-    await put(BLOB_PATH, body, { access: "public", ...options });
-  }
+    ...blobAuth(token),
+  });
 }
 
+let libraryCache = null;
+
 async function readLibrary(token) {
-  if (useBlob(token)) {
+  if (libraryCache) return libraryCache;
+  if (useBlob()) {
     try {
       const data = await blobRead(token);
-      if (data) return data;
+      if (data) {
+        libraryCache = data;
+        return data;
+      }
     } catch (error) {
       console.error("bookmark read", error && error.message);
     }
   }
   try {
     const text = await fs.readFile(FILE, "utf8");
-    return normalize(JSON.parse(text));
+    libraryCache = normalize(JSON.parse(text));
+    return libraryCache;
   } catch (error) {
     if (!error || error.code !== "ENOENT") console.error("bookmark file", error && error.message);
     return seed();
@@ -631,11 +630,93 @@ async function readLibrary(token) {
 
 async function writeLibrary(library, token) {
   const body = JSON.stringify(library, null, 2) + "\n";
-  if (useBlob(token)) {
+  if (useBlob()) {
     await blobWrite(body, token);
+    libraryCache = library;
     return;
   }
   await fs.writeFile(FILE, body);
+  libraryCache = library;
+}
+
+function shelfMinutes(article) {
+  const words = plainOf((article.paragraphs || []).join(" "))
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+  if (words < 40) return 0;
+  return Math.max(1, Math.round(words / 250));
+}
+
+function shelfPreview(article) {
+  const blocks = article.blocks || [];
+  const image = blocks.find(
+    (block) => block && block.image && !spareImage(block, article.author)
+  );
+  if (!image) return undefined;
+  return { image: image.image, alt: image.alt || "" };
+}
+
+function shelfArticle(article) {
+  return {
+    id: article.id,
+    title: article.title,
+    author: article.author || "",
+    site: article.site || "",
+    url: article.url || "",
+    savedAt: article.savedAt,
+    folder: article.folder || "",
+    tags: article.tags || [],
+    sample: Boolean(article.sample),
+    minutes: shelfMinutes(article),
+    prose: (article.paragraphs || []).some((line) => plainOf(line).length > 80),
+    preview: shelfPreview(article),
+  };
+}
+
+function shelfLibrary(library) {
+  return {
+    articles: (library.articles || []).map(shelfArticle),
+    quotes: library.quotes || [],
+    sealed: Boolean(password()),
+    shelf: true,
+  };
+}
+
+function searchLibrary(library, query) {
+  const words = String(query || "")
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 8);
+  if (!words.length) return { articles: [], quotes: [] };
+  const articles = [];
+  for (const article of library.articles || []) {
+    const hay = [
+      article.title,
+      article.author,
+      article.site,
+      article.url,
+      article.folder,
+      ...(article.tags || []),
+      ...(article.paragraphs || []).map(plainOf),
+    ]
+      .join("\n")
+      .toLowerCase();
+    if (!words.every((word) => hay.includes(word))) continue;
+    articles.push(shelfArticle(article));
+    if (articles.length >= 40) break;
+  }
+  const byId = new Map((library.articles || []).map((article) => [article.id, article]));
+  const quotes = [];
+  for (const quote of library.quotes || []) {
+    const article = byId.get(quote.articleId);
+    const hay = (quote.text + "\n" + (article ? article.title : "")).toLowerCase();
+    if (!words.every((word) => hay.includes(word))) continue;
+    quotes.push(quote);
+    if (quotes.length >= 40) break;
+  }
+  return { articles, quotes };
 }
 
 async function readJson(req) {
@@ -1320,7 +1401,18 @@ async function handler(req, res) {
     if (req.method === "GET") {
       if (!allowed(req)) return send(res, 401, { locked: true });
       const library = await readLibrary(tokenFrom(req));
-      return send(res, 200, { ...library, sealed: Boolean(password()) });
+      const url = new URL(req.url || "/", "http://bookmark.local");
+      const articleId = cleanId(url.searchParams.get("article"));
+      if (articleId) {
+        const article = library.articles.find((item) => item.id === articleId);
+        if (!article) fail(404, "That piece isn't on the shelf.");
+        return send(res, 200, {
+          article: { id: article.id, paragraphs: article.paragraphs || [], blocks: article.blocks || [] },
+        });
+      }
+      const query = String(url.searchParams.get("q") || "").trim();
+      if (query) return send(res, 200, searchLibrary(library, query));
+      return send(res, 200, shelfLibrary(library));
     }
     if (req.method !== "POST") return send(res, 405, { error: "That doesn't fit on the shelf." });
     let body;
@@ -1338,7 +1430,7 @@ async function handler(req, res) {
     const library = await readLibrary(token);
     const result = await apply(library, body || {});
     if (!result || !result.duplicate) await writeLibrary(library, token);
-    return send(res, 200, { ok: true, articles: library.articles, quotes: library.quotes, ...result });
+    return send(res, 200, { ok: true, ...shelfLibrary(library), ...result });
   } catch (error) {
     const status = error.status || 500;
     if (status >= 500) console.error("bookmark", error && error.message);
