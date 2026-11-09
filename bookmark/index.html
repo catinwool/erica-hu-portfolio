@@ -139,6 +139,7 @@
         display: none;
         align-items: center;
         gap: 0.5rem;
+        padding: 0.35rem 0.1rem;
         color: var(--ink);
         font-family: "Source Sans 3", "Avenir Next", "Segoe UI", sans-serif;
         font-size: 0.95rem;
@@ -146,9 +147,21 @@
         letter-spacing: 0.01em;
       }
 
+      .menu-toggle-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
       .menu-toggle-icon {
         position: relative;
-        width: 1.05rem;
+        width: 1.15rem;
         height: 1.5px;
         background: currentColor;
       }
@@ -158,7 +171,7 @@
         content: "";
         position: absolute;
         left: 0;
-        width: 1.05rem;
+        width: 1.15rem;
         height: 1.5px;
         background: currentColor;
       }
@@ -1248,7 +1261,7 @@
       <aside class="menu">
         <div class="menu-bar">
           <a class="name" href="#articles">Bookmark</a>
-          <button type="button" id="folders" class="menu-toggle" aria-expanded="false" aria-controls="tags" hidden>
+          <button type="button" id="folders" class="menu-toggle" aria-expanded="false" aria-controls="tags" aria-label="Folders" hidden>
             <span class="menu-toggle-icon" aria-hidden="true"></span>
             <span class="menu-toggle-label">Folders</span>
           </button>
@@ -1480,6 +1493,7 @@
         button.hidden = false;
         const labelEl = button.querySelector(".menu-toggle-label");
         if (labelEl) labelEl.textContent = label;
+        button.setAttribute("aria-label", label);
         nav.innerHTML = `<div class="menu-label-row"><p class="menu-label">${label}</p><p class="folder-rank"><button type="button" data-rank="alpha" aria-pressed="${rank === "alpha" ? "true" : "false"}">A–Z</button><button type="button" data-rank="recent" aria-pressed="${rank === "recent" ? "true" : "false"}">Recent</button></p></div>${live.map(link).join("")}${archiveBlock}`;
         paintFolders();
       }
