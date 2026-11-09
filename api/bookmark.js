@@ -1109,10 +1109,10 @@ function blockedPage(res, html) {
   return !res || !res.ok;
 }
 
-async function fetchPage(target) {
+async function fetchPage(target, timeout = 12000) {
   const res = await fetch(target, {
     redirect: "follow",
-    signal: AbortSignal.timeout(12000),
+    signal: AbortSignal.timeout(timeout),
     headers: {
       "user-agent":
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
@@ -1123,6 +1123,75 @@ async function fetchPage(target) {
   return { res, html, url: res.url || target };
 }
 
+function readablePage(page) {
+  if (!page || blockedPage(page.res, page.html)) return false;
+  const html = String(page.html || "");
+  return html.length > 800 && html.length <= 1500000;
+}
+
+async function snapshotStamps(target) {
+  const endpoint =
+    "https://web.archive.org/cdx/search/cdx?url=" +
+    encodeURIComponent(target) +
+    "&output=json&fl=timestamp,statuscode&filter=statuscode:200&limit=-4";
+  const res = await fetch(endpoint, {
+    redirect: "follow",
+    signal: AbortSignal.timeout(8000),
+    headers: { accept: "application/json", "user-agent": "Mozilla/5.0" },
+  });
+  if (!res.ok) return [];
+  const rows = await res.json();
+  if (!Array.isArray(rows)) return [];
+  return rows
+    .slice(1)
+    .map((row) => (Array.isArray(row) ? row[0] : ""))
+    .filter(Boolean)
+    .reverse();
+}
+
+async function archivedPage(target) {
+  const urls = [];
+  try {
+    const stamps = await snapshotStamps(target);
+    if (stamps[0]) urls.push("https://web.archive.org/web/" + stamps[0] + "/" + target);
+  } catch {
+    /* a dated copy can still open */
+  }
+  urls.push("https://web.archive.org/web/2024/" + target);
+  urls.push("https://web.archive.org/web/2/" + target);
+  const seen = new Set();
+  let tries = 0;
+  for (const url of urls) {
+    if (seen.has(url) || tries >= 3) continue;
+    seen.add(url);
+    tries += 1;
+    try {
+      const page = await fetchPage(url, 8000);
+      if (readablePage(page)) return { ...page, url: target };
+    } catch {
+      /* the next copy */
+    }
+  }
+  return null;
+}
+
+async function relayedPage(target) {
+  const res = await fetch("https://r.jina.ai/" + target, {
+    redirect: "follow",
+    signal: AbortSignal.timeout(12000),
+    headers: {
+      accept: "text/html",
+      "x-return-format": "html",
+      "user-agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+    },
+  });
+  const html = await res.text();
+  const page = { res, html, url: target };
+  if (!readablePage(page)) return null;
+  return page;
+}
+
 async function readPage(target) {
   let page = null;
   try {
@@ -1130,15 +1199,9 @@ async function readPage(target) {
   } catch {
     page = null;
   }
-  if (!page || blockedPage(page.res, page.html)) {
-    try {
-      const archived = await fetchPage("https://web.archive.org/web/2024/" + target);
-      if (archived.res.ok && !blockedPage(archived.res, archived.html)) page = { ...archived, url: target };
-    } catch {
-      /* the first page stands */
-    }
-  }
-  if (!page || blockedPage(page.res, page.html)) fail(400, "That page didn't open.");
+  if (!readablePage(page)) page = await archivedPage(target);
+  if (!readablePage(page)) page = await relayedPage(target);
+  if (!page || !readablePage(page)) fail(400, "That page didn't open.");
   const type = String(page.res.headers.get("content-type") || "");
   if (page.html.length > 1500000) fail(413, "That page is too large to read.");
   if (!/html|xml/i.test(type) && !/<\s*(html|body|article|p|div)\b/i.test(page.html.slice(0, 4000))) {

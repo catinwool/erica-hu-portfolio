@@ -128,6 +128,63 @@
         color: var(--accent);
       }
 
+      .menu-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .menu-toggle {
+        display: none;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--ink);
+        font-family: "Source Sans 3", "Avenir Next", "Segoe UI", sans-serif;
+        font-size: 0.95rem;
+        font-weight: 560;
+        letter-spacing: 0.01em;
+      }
+
+      .menu-toggle-icon {
+        position: relative;
+        width: 1.05rem;
+        height: 1.5px;
+        background: currentColor;
+      }
+
+      .menu-toggle-icon::before,
+      .menu-toggle-icon::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        width: 1.05rem;
+        height: 1.5px;
+        background: currentColor;
+      }
+
+      .menu-toggle-icon::before {
+        top: -0.32rem;
+      }
+
+      .menu-toggle-icon::after {
+        top: 0.32rem;
+      }
+
+      .menu.folders-open .menu-toggle-icon {
+        background: transparent;
+      }
+
+      .menu.folders-open .menu-toggle-icon::before {
+        top: 0;
+        transform: rotate(40deg);
+      }
+
+      .menu.folders-open .menu-toggle-icon::after {
+        top: 0;
+        transform: rotate(-40deg);
+      }
+
       .search {
         margin-top: 1.2rem;
       }
@@ -1064,13 +1121,70 @@
           margin-top: 0;
         }
 
+        .menu-toggle:not([hidden]) {
+          display: inline-flex;
+        }
+
         .menu-tags {
+          display: none;
+        }
+
+        .menu-lock {
+          display: none;
+        }
+
+        .menu.folders-open .menu-lock:not([hidden]) {
+          display: block;
+          margin-top: 0.85rem;
+        }
+
+        .menu.folders-open .menu-tags:not([hidden]) {
           display: flex;
-          flex-wrap: wrap;
-          align-items: baseline;
-          gap: 0.15rem 0.85rem;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 0.15rem;
+          max-height: min(68vh, 26rem);
+          margin-top: 0.85rem;
+          padding: 0.75rem 0.7rem 0 0;
+          border-top: 1px solid var(--rule);
+          overflow: auto;
+        }
+
+        .menu.folders-open .menu-tags a {
+          padding: 0.42rem 0;
+        }
+
+        .menu.folders-open .folder-group {
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 0.15rem;
+          width: 100%;
           margin-top: 0.7rem;
-          overflow: visible;
+        }
+
+        .piece-preview,
+        .piece-tags {
+          display: none;
+        }
+
+        .pieces a {
+          grid-template-columns: minmax(0, 1fr);
+          row-gap: 0.22rem;
+          padding: 1.05rem 0 1.2rem;
+        }
+
+        .pieces time {
+          order: 4;
+          white-space: normal;
+        }
+
+        .byline {
+          order: 2;
+        }
+
+        .piece-source {
+          order: 3;
         }
 
         .menu-label-row {
@@ -1080,15 +1194,6 @@
         .menu-label {
           width: auto;
           margin-bottom: 0;
-        }
-
-        .folder-group {
-          display: flex;
-          flex-wrap: wrap;
-          align-items: baseline;
-          gap: 0.15rem 0.85rem;
-          width: 100%;
-          margin-top: 0.85rem;
         }
 
         .folder-group .folder-head,
@@ -1103,7 +1208,8 @@
         }
 
         .piece-title {
-          font-size: 1.2rem;
+          font-size: 1.42rem;
+          line-height: 1.28;
         }
 
         .body h2 {
@@ -1115,7 +1221,13 @@
   <body>
     <div class="shelf">
       <aside class="menu">
-        <a class="name" href="#articles">Bookmark</a>
+        <div class="menu-bar">
+          <a class="name" href="#articles">Bookmark</a>
+          <button type="button" id="folders" class="menu-toggle" aria-expanded="false" aria-controls="tags" hidden>
+            <span class="menu-toggle-icon" aria-hidden="true"></span>
+            <span class="menu-toggle-label">Folders</span>
+          </button>
+        </div>
         <form class="search" role="search">
           <input id="search" name="q" type="search" placeholder="Search" aria-label="Search the shelf" autocomplete="off" enterkeyhint="search" />
         </form>
@@ -1173,6 +1285,7 @@
         searchQuotes: [],
       };
       let lastKey = "";
+      let foldersOpen = false;
       let keepText = "";
       let searchFlight = 0;
       let bodyFlight = "";
@@ -1281,8 +1394,16 @@
         return article && article.folder ? article.folder : "";
       }
 
+      function paintFolders() {
+        const button = document.getElementById("folders");
+        const open = foldersOpen && button && !button.hidden;
+        document.querySelector(".menu").classList.toggle("folders-open", open);
+        if (button) button.setAttribute("aria-expanded", open ? "true" : "false");
+      }
+
       function renderTags(articles) {
         const nav = document.getElementById("tags");
+        const button = document.getElementById("folders");
         const byId = new Map(articles.map((article) => [article.id, article]));
         const newest = new Map();
         if (state.view === "quotes") {
@@ -1305,6 +1426,9 @@
         if (!tags.length) {
           nav.hidden = true;
           nav.innerHTML = "";
+          button.hidden = true;
+          foldersOpen = false;
+          paintFolders();
           return;
         }
         if (state.folderOrder === "recent") {
@@ -1328,7 +1452,11 @@
           : `<p class="menu-label">Archive</p>`;
         const archiveBlock = archived.length ? `<div class="folder-group">${head}${themes.map(link).join("")}</div>` : "";
         nav.hidden = false;
+        button.hidden = false;
+        const labelEl = button.querySelector(".menu-toggle-label");
+        if (labelEl) labelEl.textContent = label;
         nav.innerHTML = `<div class="menu-label-row"><p class="menu-label">${label}</p><p class="folder-rank"><button type="button" data-rank="alpha" aria-pressed="${rank === "alpha" ? "true" : "false"}">A–Z</button><button type="button" data-rank="recent" aria-pressed="${rank === "recent" ? "true" : "false"}">Recent</button></p></div>${live.map(link).join("")}${archiveBlock}`;
+        paintFolders();
       }
 
       function readingTime(article) {
@@ -1928,6 +2056,9 @@
         if (state.loadError) {
           nav.hidden = true;
           tags.hidden = true;
+          foldersOpen = false;
+          document.getElementById("folders").hidden = true;
+          paintFolders();
           document.getElementById("lock").hidden = true;
           document.getElementById("search").hidden = true;
           document.title = "Bookmark";
@@ -1937,6 +2068,9 @@
         if (state.locked) {
           nav.hidden = true;
           tags.hidden = true;
+          foldersOpen = false;
+          document.getElementById("folders").hidden = true;
+          paintFolders();
           document.getElementById("lock").hidden = true;
           document.getElementById("search").hidden = true;
           document.title = "Bookmark";
@@ -1948,7 +2082,10 @@
         const route = readRoute();
         const key = [route.view, route.tag, route.topic, route.query, route.articleId, route.quoteId].join(":");
         const changed = key !== lastKey;
-        if (changed) state.error = "";
+        if (changed) {
+          state.error = "";
+          foldersOpen = false;
+        }
         lastKey = key;
         Object.assign(state, route);
         const articles = shelfArticles();
@@ -2592,7 +2729,22 @@
         }
       });
 
+      document.getElementById("folders").addEventListener("click", () => {
+        foldersOpen = !foldersOpen;
+        paintFolders();
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape" || !foldersOpen) return;
+        foldersOpen = false;
+        paintFolders();
+      });
+
       document.getElementById("tags").addEventListener("click", (event) => {
+        if (event.target.closest("a")) {
+          foldersOpen = false;
+          paintFolders();
+        }
         const button = event.target.closest("[data-rank]");
         if (!button) return;
         state.folderOrder = button.dataset.rank === "recent" ? "recent" : "alpha";
