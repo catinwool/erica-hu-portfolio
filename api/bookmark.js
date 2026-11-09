@@ -1384,24 +1384,31 @@ async function refetchArticle(library, body) {
   return { article };
 }
 
+function flatten(value) {
+  return String(value || "")
+    .replace(/[\uE000-\uE003]/g, "")
+    .replace(/[\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function passageOf(article) {
   const source = Array.isArray(article.blocks) && article.blocks.length ? article.blocks : article.paragraphs;
   const parts = [];
-  const plain = (value) => String(value || "").replace(/[\uE000-\uE003]/g, "").trim();
   for (const block of source || []) {
-    if (typeof block === "string" && plain(block)) parts.push(plain(block));
-    else if (block && block.heading) parts.push(plain(block.heading));
-    else if (block && block.quote) parts.push(plain(block.quote));
-    else if (block && typeof block.poem === "string") parts.push(plain(block.poem));
+    if (typeof block === "string" && flatten(block)) parts.push(block);
+    else if (block && block.heading) parts.push(block.heading);
+    else if (block && block.quote) parts.push(block.quote);
+    else if (block && typeof block.poem === "string") parts.push(block.poem);
   }
-  return parts.join(" ");
+  return flatten(parts.join(" "));
 }
 
 function keepQuote(library, body) {
   const article = findArticle(library, body.articleId);
   const text = cleanText(body.text, 8000);
   if (text.length < 2 || !/[A-Za-z0-9]/.test(text)) fail(400, "Select a passage to highlight.");
-  if (!passageOf(article).includes(text)) fail(400, "That passage isn't in the piece.");
+  if (!passageOf(article).includes(flatten(text))) fail(400, "That passage isn't in the piece.");
   const existing = library.quotes.find((quote) => quote.articleId === article.id && quote.text === text);
   if (existing) return { quote: existing, duplicate: true };
   const quote = {
@@ -1599,6 +1606,7 @@ async function handler(req, res) {
             paragraphs: article.paragraphs || [],
             blocks: article.blocks || [],
           },
+          quotes: (library.quotes || []).filter((quote) => quote.articleId === article.id),
         });
       }
       if (url.searchParams.get("quotes") === "1") {

@@ -2188,16 +2188,52 @@
         }
       }
 
+      function flat(value) {
+        return String(value || "")
+          .replace(/[\uE000-\uE003]/g, "")
+          .replace(/[\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+
       function passageOf(article) {
         const blocks = article.blocks && article.blocks.length ? article.blocks : article.paragraphs || [];
         const parts = [];
         for (const block of blocks) {
-          if (typeof block === "string" && block.trim()) parts.push(block.replace(/[\uE000-\uE003]/g, "").trim());
-          else if (block && block.heading) parts.push(String(block.heading).replace(/[\uE000-\uE003]/g, "").trim());
-          else if (block && block.quote) parts.push(String(block.quote).replace(/[\uE000-\uE003]/g, "").trim());
-          else if (block && typeof block.poem === "string" && block.poem.trim()) parts.push(block.poem.replace(/[\uE000-\uE003\u00a0]/g, " ").trim());
+          if (typeof block === "string" && block.trim()) parts.push(block);
+          else if (block && block.heading) parts.push(String(block.heading));
+          else if (block && block.quote) parts.push(String(block.quote));
+          else if (block && typeof block.poem === "string" && block.poem.trim()) parts.push(block.poem);
         }
-        return parts.join(" ");
+        return flat(parts.join(" "));
+      }
+
+      function flatSpan(full, needle) {
+        const direct = full.indexOf(needle);
+        if (direct >= 0) return { index: direct, length: needle.length };
+        const wanted = flat(needle);
+        if (!wanted) return null;
+        let folded = "";
+        const map = [];
+        let spaced = false;
+        for (let i = 0; i < full.length; i++) {
+          const space = /[\s\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000]/.test(full[i]);
+          if (space) {
+            if (!folded || spaced) continue;
+            spaced = true;
+            folded += " ";
+            map.push(i);
+            continue;
+          }
+          spaced = false;
+          folded += full[i];
+          map.push(i);
+        }
+        const at = folded.indexOf(wanted);
+        if (at < 0) return null;
+        const start = map[at];
+        const end = map[at + wanted.length - 1] + 1;
+        return { index: start, length: end - start };
       }
 
       function applyQuotes(root, quotes) {
@@ -2217,9 +2253,10 @@
             full += node.nodeValue;
             spans.push({ node, start, end: full.length });
           }
-          const index = full.indexOf(quote.text);
-          if (index === -1) continue;
-          const matchEnd = index + quote.text.length;
+          const found = flatSpan(full, quote.text);
+          if (!found) continue;
+          const index = found.index;
+          const matchEnd = index + found.length;
           const hits = [];
           for (const span of spans) {
             const start = Math.max(span.start, index);
@@ -2488,6 +2525,14 @@
             if (article) {
               article.paragraphs = data.article.paragraphs || [];
               article.blocks = data.article.blocks || [];
+            }
+            if (Array.isArray(data.quotes)) {
+              for (const quote of data.quotes) {
+                if (!quote || !quote.id) continue;
+                const index = state.quotes.findIndex((item) => item.id === quote.id);
+                if (index >= 0) state.quotes[index] = quote;
+                else state.quotes.push(quote);
+              }
             }
           }
         } catch (error) {
@@ -2797,43 +2842,20 @@
         }
       });
 
-      function selectionText(range, body) {
-        const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT);
-        const parts = [];
-        let lastBlock = null;
-        let node;
-        while ((node = walker.nextNode())) {
-          if (!range.intersectsNode(node) || !node.nodeValue) continue;
-          let start = 0;
-          let end = node.nodeValue.length;
-          if (node === range.startContainer) start = range.startOffset;
-          if (node === range.endContainer) end = range.endOffset;
-          if (end <= start) continue;
-          const slice = node.nodeValue.slice(start, end);
-          if (!slice) continue;
-          const block = node.parentElement && node.parentElement.closest("p, h2, li, figcaption, blockquote");
-          if (parts.length && block !== lastBlock) parts.push(" ");
-          lastBlock = block;
-          parts.push(slice);
-        }
-        return parts.join("").replace(/\s+/g, " ").trim();
-      }
-
       function selectedLine() {
         const selection = window.getSelection();
         if (!selection || selection.isCollapsed || selection.rangeCount === 0) return null;
         const range = selection.getRangeAt(0);
         const body = document.getElementById("body");
         if (!body) return null;
-        const startEl = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
-        const endEl = range.endContainer.nodeType === 1 ? range.endContainer : range.endContainer.parentElement;
+        const nodeOf = (node) => (node.nodeType === 1 ? node : node.parentElement);
+        const startEl = nodeOf(range.startContainer);
+        const endEl = nodeOf(range.endContainer);
         if (!startEl || !endEl || !body.contains(startEl) || !body.contains(endEl)) return null;
-        if (startEl.closest("mark") || endEl.closest("mark")) return null;
-        const text = selectionText(range, body);
+        const startMark = startEl.closest("mark");
+        if (startMark && startMark === endEl.closest("mark")) return null;
+        const text = flat(selection.toString());
         if (text.length < 2 || text.length > 8000 || !/[A-Za-z0-9]/.test(text)) return null;
-        const article = articleById(state.articleId);
-        if (!article || !passageOf(article).includes(text)) return null;
-        if (state.quotes.some((quote) => quote.articleId === article.id && quote.text === text)) return null;
         const rects = range.getClientRects();
         const rect = rects[rects.length - 1];
         if (!rect || (!rect.width && !rect.height)) return null;
@@ -2887,8 +2909,8 @@
       }
 
       function considerSelection() {
-        if (state.view !== "read" || state.locked) {
-          hideFloats();
+        if (penDown || state.view !== "read" || state.locked) {
+          if (!penDown) hideFloats();
           return;
         }
         const found = selectedLine();
@@ -2907,10 +2929,23 @@
         placeFloat(keep, found.rect);
       }
 
-      document.addEventListener("mouseup", () => setTimeout(considerSelection, 0));
+      let penDown = false;
+      let selectionFrame = 0;
+      function scheduleSelection() {
+        if (selectionFrame) return;
+        selectionFrame = requestAnimationFrame(() => {
+          selectionFrame = 0;
+          considerSelection();
+        });
+      }
+
+      document.addEventListener("pointerup", scheduleSelection);
+      document.addEventListener("keyup", (event) => {
+        if (event.key === "Shift" || event.key.startsWith("Arrow")) scheduleSelection();
+      });
       document.addEventListener("selectionchange", () => {
-        if (state.view !== "read") return;
-        setTimeout(considerSelection, 0);
+        if (penDown || state.view !== "read") return;
+        scheduleSelection();
       });
       window.addEventListener("scroll", () => {
         if (keep.hidden) return;
@@ -2940,8 +2975,18 @@
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") hideFloats();
       });
-      keep.addEventListener("mousedown", (event) => event.preventDefault());
-      letgo.addEventListener("mousedown", (event) => event.preventDefault());
+      function holdSelection(event) {
+        penDown = true;
+        event.preventDefault();
+      }
+      keep.addEventListener("pointerdown", holdSelection);
+      letgo.addEventListener("pointerdown", holdSelection);
+      document.addEventListener("pointerup", () => {
+        penDown = false;
+      });
+      document.addEventListener("pointercancel", () => {
+        penDown = false;
+      });
       keep.addEventListener("click", async (event) => {
         const pen = event.target.closest("[data-ink]");
         if (!pen) return;
@@ -2964,8 +3009,13 @@
           return;
         }
         if (!text || !articleId) return;
+        const article = articleById(articleId);
+        if (!article || !passageOf(article).includes(flat(text))) {
+          say("That passage isn't in the piece.");
+          return;
+        }
         try {
-          await api({ kind: "keep", articleId, text, ink });
+          await api({ kind: "keep", articleId, text: flat(text), ink });
           state.error = "";
           render();
         } catch (error) {
