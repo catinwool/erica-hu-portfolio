@@ -2932,7 +2932,90 @@
       }
 
       let penDown = false;
+      let penPress = null;
+      let penHandled = false;
       let selectionFrame = 0;
+
+      function holdSelection(event) {
+        penDown = true;
+        penHandled = false;
+        event.preventDefault();
+        const pen = event.target.closest("[data-ink]");
+        if (event.currentTarget === keep && pen) penPress = { kind: "ink", ink: pen.dataset.ink };
+        else if (event.currentTarget === letgo) penPress = { kind: "let-go" };
+        else penPress = null;
+      }
+
+      async function chooseInk(ink) {
+        if (penHandled) return;
+        penHandled = true;
+        const quoteId = keep.dataset.quote || "";
+        const text = keepText;
+        const articleId = state.articleId;
+        const pen = [...keep.querySelectorAll("[data-ink]")].find((item) => item.dataset.ink === ink);
+        const same = pen && pen.getAttribute("aria-pressed") === "true";
+        hideFloats();
+        window.getSelection()?.removeAllRanges();
+        if (quoteId) {
+          if (same) return;
+          try {
+            await api({ kind: "ink", id: quoteId, ink });
+            state.error = "";
+            render();
+          } catch (error) {
+            say(error.message);
+          }
+          return;
+        }
+        if (!text || !articleId) return;
+        const article = articleById(articleId);
+        if (!article || !passageOf(article).includes(flat(text))) {
+          say("That passage isn't in the piece.");
+          return;
+        }
+        try {
+          await api({ kind: "keep", articleId, text: flat(text), ink });
+          state.error = "";
+          render();
+        } catch (error) {
+          say(error.message);
+        }
+      }
+
+      async function releaseLine() {
+        if (penHandled) return;
+        penHandled = true;
+        const id = letgo.dataset.id;
+        hideFloats();
+        if (!id) return;
+        try {
+          await api({ kind: "let-go", id });
+          state.error = "";
+          render();
+        } catch (error) {
+          say(error.message);
+        }
+      }
+
+      keep.addEventListener("pointerdown", holdSelection);
+      letgo.addEventListener("pointerdown", holdSelection);
+      document.addEventListener("pointerup", (event) => {
+        const press = penPress;
+        penPress = null;
+        penDown = false;
+        if (!press || !event.target.closest || !event.target.closest("#keep, #letgo")) return;
+        if (press.kind === "let-go") releaseLine();
+        else chooseInk(press.ink);
+      });
+      document.addEventListener("pointercancel", () => {
+        penPress = null;
+        penDown = false;
+      });
+      keep.addEventListener("click", (event) => {
+        const pen = event.target.closest("[data-ink]");
+        if (pen) chooseInk(pen.dataset.ink);
+      });
+      letgo.addEventListener("click", () => releaseLine());
       function scheduleSelection() {
         if (selectionFrame) return;
         selectionFrame = requestAnimationFrame(() => {
@@ -2976,65 +3059,6 @@
       });
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") hideFloats();
-      });
-      function holdSelection(event) {
-        penDown = true;
-        event.preventDefault();
-      }
-      keep.addEventListener("pointerdown", holdSelection);
-      letgo.addEventListener("pointerdown", holdSelection);
-      document.addEventListener("pointerup", () => {
-        penDown = false;
-      });
-      document.addEventListener("pointercancel", () => {
-        penDown = false;
-      });
-      keep.addEventListener("click", async (event) => {
-        const pen = event.target.closest("[data-ink]");
-        if (!pen) return;
-        const ink = pen.dataset.ink;
-        const quoteId = keep.dataset.quote || "";
-        const text = keepText;
-        const articleId = state.articleId;
-        const same = pen.getAttribute("aria-pressed") === "true";
-        hideFloats();
-        window.getSelection()?.removeAllRanges();
-        if (quoteId) {
-          if (same) return;
-          try {
-            await api({ kind: "ink", id: quoteId, ink });
-            state.error = "";
-            render();
-          } catch (error) {
-            say(error.message);
-          }
-          return;
-        }
-        if (!text || !articleId) return;
-        const article = articleById(articleId);
-        if (!article || !passageOf(article).includes(flat(text))) {
-          say("That passage isn't in the piece.");
-          return;
-        }
-        try {
-          await api({ kind: "keep", articleId, text: flat(text), ink });
-          state.error = "";
-          render();
-        } catch (error) {
-          say(error.message);
-        }
-      });
-      letgo.addEventListener("click", async () => {
-        const id = letgo.dataset.id;
-        hideFloats();
-        if (!id) return;
-        try {
-          await api({ kind: "let-go", id });
-          state.error = "";
-          render();
-        } catch (error) {
-          say(error.message);
-        }
       });
 
       const searchForm = document.querySelector(".search");
