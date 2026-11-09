@@ -584,6 +584,12 @@
         color: var(--accent);
       }
 
+      .more {
+        margin: 1.2rem 0 2rem;
+        color: var(--ink-faint);
+        font-style: italic;
+      }
+
       .empty {
         margin: 1.2rem 0 0;
         color: var(--ink-soft);
@@ -1321,6 +1327,12 @@
         searchFor: "",
         searchArticles: [],
         searchQuotes: [],
+        homeIds: [],
+        folders: [],
+        listKey: "",
+        listDone: false,
+        listBusy: false,
+        quotesLoaded: false,
       };
       let lastKey = "";
       let foldersOpen = false;
@@ -1400,6 +1412,135 @@
         return state.articles.find((article) => article.id === id) || null;
       }
 
+      function currentListKey() {
+        if (state.topic) return "topic:" + state.topic;
+        return "folder:" + (state.tag || "");
+      }
+
+      function rememberArticles(list) {
+        for (const article of list || []) {
+          if (!article || !article.id) continue;
+          const index = state.articles.findIndex((item) => item.id === article.id);
+          if (index < 0) {
+            state.articles.push(article);
+            continue;
+          }
+          const old = state.articles[index];
+          const next = Object.assign({}, old, article);
+          if (old.blocks && !article.blocks) {
+            next.blocks = old.blocks;
+            next.paragraphs = old.paragraphs;
+          }
+          state.articles[index] = next;
+        }
+      }
+
+      function mergePage(data, reset) {
+        if (typeof data.sealed === "boolean") state.sealed = data.sealed;
+        if (Array.isArray(data.folders)) state.folders = data.folders;
+        const rows = data.articles || [];
+        rememberArticles(rows);
+        if (Array.isArray(data.kept)) rememberArticles(data.kept);
+        if (reset) state.homeIds = rows.map((article) => article.id);
+        else {
+          const have = new Set(state.homeIds);
+          for (const article of rows) {
+            if (!have.has(article.id)) state.homeIds.push(article.id);
+          }
+        }
+        state.listKey = currentListKey();
+        state.listDone = !data.more;
+      }
+
+      let listFlight = 0;
+
+      async function fillList(reset) {
+        const key = currentListKey();
+        const from = reset ? 0 : state.homeIds.length;
+        const flight = ++listFlight;
+        state.listBusy = true;
+        state.listKey = key;
+        if (reset) {
+          state.homeIds = [];
+          state.listDone = false;
+        }
+        try {
+          const params = new URLSearchParams({ from: String(from), limit: "20" });
+          if (state.topic) params.set("topic", state.topic);
+          else if (state.tag) params.set("folder", state.tag);
+          if (from === 0) {
+            const ids = Object.keys(readingMap()).slice(0, 12);
+            if (ids.length) params.set("also", ids.join(","));
+          }
+          const res = await fetch("/api/bookmark?" + params.toString(), { headers: { accept: "application/json" } });
+          const data = await res.json();
+          if (flight !== listFlight || currentListKey() !== key) return;
+          if (res.status === 401 && data.locked) {
+            state.locked = true;
+            state.step = data.step || "";
+            return;
+          }
+          if (!res.ok) throw new Error(data.error || "The shelf didn't open.");
+          mergePage(data, reset);
+          state.loadError = "";
+        } catch (error) {
+          if (flight !== listFlight) return;
+          if (!state.homeIds.length) state.loadError = error.message || "The shelf didn't open.";
+          else state.error = error.message || "The shelf didn't open.";
+          state.listDone = true;
+        } finally {
+          if (flight === listFlight) state.listBusy = false;
+        }
+        if (flight === listFlight && currentListKey() === key && state.view === "articles" && !state.locked) render();
+      }
+
+      let moreObserver = null;
+
+      function maybeMore() {
+        if (state.listBusy || state.listDone || state.view !== "articles") return;
+        const node = document.querySelector("[data-more='articles']");
+        if (!node) return;
+        if (node.getBoundingClientRect().top < window.innerHeight + 700) fillList(false);
+      }
+
+      function watchMore() {
+        maybeMore();
+        const node = document.querySelector("[data-more='articles']");
+        if (!node) return;
+        if (moreObserver) moreObserver.disconnect();
+        moreObserver = new IntersectionObserver(
+          (entries) => {
+            if (entries.some((entry) => entry.isIntersecting)) maybeMore();
+          },
+          { rootMargin: "700px" }
+        );
+        moreObserver.observe(node);
+      }
+
+      async function loadQuotes() {
+        if (state.quotesLoaded || state.quotesFlight) return;
+        state.quotesFlight = true;
+        try {
+          const res = await fetch("/api/bookmark?quotes=1", { headers: { accept: "application/json" } });
+          const data = await res.json();
+          if (res.status === 401 && data.locked) {
+            state.locked = true;
+            state.step = data.step || "";
+            return;
+          }
+          if (!res.ok) throw new Error(data.error || "The lines didn't open.");
+          rememberArticles(data.articles || []);
+          state.quotes = data.quotes || [];
+          state.quotesLoaded = true;
+          state.loadError = "";
+        } catch (error) {
+          state.error = error.message || "The lines didn't open.";
+        } finally {
+          state.quotesFlight = false;
+        }
+        if (state.view === "quotes" && !state.locked) render();
+      }
+
       function shelfQuotes() {
         const ids = new Set(shelfArticles().map((article) => article.id));
         return state.quotes
@@ -1450,6 +1591,10 @@
             if (!book) continue;
             const prev = newest.get(book) || "";
             if (String(quote.at) > prev) newest.set(book, String(quote.at));
+          }
+        } else if (state.folders.length) {
+          for (const folder of state.folders) {
+            if (folder && folder.name) newest.set(folder.name, String(folder.at || ""));
           }
         } else {
           for (const article of articles) {
@@ -1698,6 +1843,16 @@
         return (first[0] + (second[0] || "")).toUpperCase();
       }
 
+      function continuePool() {
+        const map = readingMap();
+        return state.articles.filter((article) => {
+          if (!map[article.id] || !hasProse(article)) return false;
+          if (state.topic) return (article.tags || []).includes(state.topic);
+          if (state.tag) return article.folder === state.tag;
+          return true;
+        });
+      }
+
       function continueRow(articles) {
         const map = readingMap();
         const reading = articles
@@ -1761,22 +1916,25 @@
       }
 
       function renderArticles(articles) {
-        const samples = articles.some((article) => article.sample);
-        const shown = state.topic
-          ? articles.filter((article) => (article.tags || []).includes(state.topic))
-          : state.tag
-            ? articles.filter((article) => article.folder === state.tag)
-            : articles;
+        const byId = new Map(articles.map((article) => [article.id, article]));
+        const shown = state.homeIds.map((id) => byId.get(id)).filter(Boolean);
+        const samples = shown.some((article) => article.sample);
         const lede = samples
           ? "A sample shelf, so the shape is visible. Save a piece of your own and these step aside."
           : "";
         const rows = shown.map(pieceRow).join("");
+        if (!shown.length && !state.listDone) {
+          main.innerHTML = `<p class="empty">Opening the shelf.</p>`;
+          return;
+        }
         const empty = state.topic
           ? `Nothing tagged ${esc(state.topic)}.`
           : state.tag
             ? "Nothing in that folder."
             : "The shelf is empty.";
-        main.innerHTML = `${lede ? `<p class="lede">${lede}</p>` : ""}${continueRow(shown)}${rows ? `<ul class="pieces">${rows}</ul>` : `<p class="empty">${empty}</p>`}`;
+        const more = state.listDone ? "" : `<p class="more" data-more="articles">More of the shelf.</p>`;
+        main.innerHTML = `${lede ? `<p class="lede">${lede}</p>` : ""}${continueRow(continuePool())}${rows ? `<ul class="pieces">${rows}</ul>` : `<p class="empty">${empty}</p>`}${more}`;
+        watchMore();
       }
 
       function quoteGather(quotes, byId) {
@@ -2151,7 +2309,10 @@
           renderSearch(articles);
         } else if (state.view === "quotes") {
           document.title = "Quotes · Bookmark";
-          renderQuotes(articles);
+          if (!state.quotesLoaded) {
+            main.innerHTML = `<p class="empty">Opening the lines.</p>`;
+            loadQuotes();
+          } else renderQuotes(articles);
         } else if (state.view === "save") {
           document.title = "Save a piece · Bookmark";
           renderSave();
@@ -2159,9 +2320,18 @@
           const article = articleById(state.articleId);
           document.title = article ? article.title + " · Bookmark" : "Bookmark";
           if (article && article.prose && !article.blocks && !article.bodyError && bodyFlight !== article.id) loadBody(article.id);
+          if (!article && state.articleId && bodyFlight !== state.articleId) loadBody(state.articleId);
           renderReader(article);
         } else {
           document.title = "Bookmark";
+          if (state.listKey !== currentListKey()) {
+            state.homeIds = [];
+            state.listDone = false;
+            fillList(true);
+            main.innerHTML = `<p class="empty">Opening the shelf.</p>`;
+            if (changed) window.scrollTo(0, 0);
+            return;
+          }
           renderArticles(articles);
         }
         if (changed && state.view === "read" && state.quoteId) {
@@ -2211,21 +2381,25 @@
         state.locked = false;
         state.step = "";
         if (typeof data.sealed === "boolean") state.sealed = data.sealed;
-        if (Array.isArray(data.articles)) {
-          const prev = new Map(state.articles.map((article) => [article.id, article]));
-          state.articles = data.articles.map((article) => {
-            const old = prev.get(article.id);
-            if (old && old.blocks && !article.blocks) {
-              return Object.assign({}, article, { paragraphs: old.paragraphs, blocks: old.blocks });
-            }
-            return article;
-          });
+        if (data.page && Array.isArray(data.articles)) mergePage(data, false);
+        else if (data.article && data.article.id) rememberArticles([data.article]);
+        if (data.article && data.article.id && !state.homeIds.includes(data.article.id) && !state.tag && !state.topic && state.view === "articles") {
+          state.homeIds.unshift(data.article.id);
         }
-        if (data.article && data.article.blocks) {
-          const index = state.articles.findIndex((article) => article.id === data.article.id);
-          if (index >= 0) state.articles[index] = Object.assign({}, state.articles[index], data.article);
+        if (data.article && data.article.id && state.tag && data.article.folder !== state.tag) {
+          state.homeIds = state.homeIds.filter((id) => id !== data.article.id);
         }
-        if (Array.isArray(data.quotes)) state.quotes = data.quotes;
+        if (data.quote && data.quote.id) {
+          const index = state.quotes.findIndex((quote) => quote.id === data.quote.id);
+          if (index >= 0) state.quotes[index] = data.quote;
+          else state.quotes.unshift(data.quote);
+        }
+        if (data.removedQuote) state.quotes = state.quotes.filter((quote) => quote.id !== data.removedQuote);
+        if (data.removedArticle) {
+          state.articles = state.articles.filter((article) => article.id !== data.removedArticle);
+          state.homeIds = state.homeIds.filter((id) => id !== data.removedArticle);
+          state.quotes = state.quotes.filter((quote) => quote.articleId !== data.removedArticle);
+        }
         return data;
       }
 
@@ -2243,10 +2417,13 @@
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "That piece didn't open.");
-          const article = articleById(id);
-          if (article && data.article && data.article.id === id) {
-            article.paragraphs = data.article.paragraphs || [];
-            article.blocks = data.article.blocks || [];
+          if (data.article && data.article.id === id) {
+            rememberArticles([data.article]);
+            const article = articleById(id);
+            if (article) {
+              article.paragraphs = data.article.paragraphs || [];
+              article.blocks = data.article.blocks || [];
+            }
           }
         } catch (error) {
           const article = articleById(id);
@@ -2259,8 +2436,8 @@
 
       async function load() {
         try {
-          await api();
-          state.loadError = "";
+          await fillList(true);
+          state.loadError = state.loadError || "";
         } catch (error) {
           state.loadError = error.message || "The shelf didn't open.";
         }
@@ -2799,6 +2976,7 @@
 
       load().then(() => {
         render();
+        window.addEventListener("scroll", maybeMore, { passive: true });
         window.addEventListener("hashchange", () => {
           rememberPlace();
           render();

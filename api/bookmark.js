@@ -681,6 +681,54 @@ function shelfArticle(article) {
   };
 }
 
+function folderIndex(articles) {
+  const newest = new Map();
+  for (const article of articles || []) {
+    const folder = article.folder || "";
+    if (!folder) continue;
+    const stamp = String(article.savedAt || "");
+    const prev = newest.get(folder) || "";
+    if (stamp > prev) newest.set(folder, stamp);
+  }
+  return [...newest.entries()].map(([name, at]) => ({ name, at }));
+}
+
+function orderedArticles(library) {
+  return (library.articles || []).slice().sort((a, b) => String(b.savedAt).localeCompare(String(a.savedAt)) || String(a.title).localeCompare(String(b.title)));
+}
+
+function shelfPage(library, options) {
+  const from = Math.max(0, Number(options.from) || 0);
+  const limit = Math.min(40, Math.max(1, Number(options.limit) || 20));
+  let list = orderedArticles(library);
+  const folder = String(options.folder || "");
+  const topic = String(options.topic || "");
+  if (folder) list = list.filter((article) => (article.folder || "") === folder);
+  if (topic) list = list.filter((article) => (article.tags || []).includes(topic));
+  const slice = list.slice(from, from + limit).map(shelfArticle);
+  const have = new Set(slice.map((article) => article.id));
+  const kept = [];
+  for (const id of options.also || []) {
+    if (have.has(id)) continue;
+    const article = (library.articles || []).find((item) => item.id === id);
+    if (!article) continue;
+    kept.push(shelfArticle(article));
+    have.add(id);
+  }
+  const page = {
+    articles: slice,
+    kept,
+    more: from + slice.length < list.length,
+    next: from + slice.length,
+    total: list.length,
+    sealed: Boolean(password()),
+    shelf: true,
+    page: true,
+  };
+  if (from === 0) page.folders = folderIndex(library.articles);
+  return page;
+}
+
 function shelfLibrary(library) {
   return {
     articles: (library.articles || []).map(shelfArticle),
@@ -1372,7 +1420,7 @@ function letGo(library, body) {
   const before = library.quotes.length;
   library.quotes = library.quotes.filter((quote) => quote.id !== id);
   if (library.quotes.length === before) fail(400, "That line isn't on the shelf.");
-  return {};
+  return { removedQuote: id };
 }
 
 function setTag(library, body, add) {
@@ -1405,7 +1453,7 @@ function removeArticle(library, body) {
   library.articles = library.articles.filter((article) => article.id !== id);
   if (library.articles.length === before) fail(400, "That piece isn't on the shelf.");
   library.quotes = library.quotes.filter((quote) => quote.articleId !== id);
-  return {};
+  return { removedArticle: id };
 }
 
 function apply(library, body) {
@@ -1532,12 +1580,32 @@ async function handler(req, res) {
         const article = library.articles.find((item) => item.id === articleId);
         if (!article) fail(404, "That piece isn't on the shelf.");
         return send(res, 200, {
-          article: { id: article.id, paragraphs: article.paragraphs || [], blocks: article.blocks || [] },
+          article: {
+            ...shelfArticle(article),
+            paragraphs: article.paragraphs || [],
+            blocks: article.blocks || [],
+          },
         });
+      }
+      if (url.searchParams.get("quotes") === "1") {
+        const ids = new Set((library.quotes || []).map((quote) => quote.articleId));
+        const articles = (library.articles || []).filter((article) => ids.has(article.id)).map(shelfArticle);
+        return send(res, 200, { quotes: library.quotes || [], articles, sealed: Boolean(password()) });
       }
       const query = String(url.searchParams.get("q") || "").trim();
       if (query) return send(res, 200, searchLibrary(library, query));
-      return send(res, 200, shelfLibrary(library));
+      const also = String(url.searchParams.get("also") || "")
+        .split(",")
+        .map((id) => cleanId(id))
+        .filter(Boolean)
+        .slice(0, 12);
+      return send(res, 200, shelfPage(library, {
+        from: url.searchParams.get("from"),
+        limit: url.searchParams.get("limit"),
+        folder: String(url.searchParams.get("folder") || "").slice(0, 40),
+        topic: String(url.searchParams.get("topic") || "").slice(0, 32),
+        also,
+      }));
     }
     if (req.method !== "POST") return send(res, 405, { error: "That doesn't fit on the shelf." });
     let body;
@@ -1555,7 +1623,7 @@ async function handler(req, res) {
     const library = await readLibrary(token);
     const result = await apply(library, body || {});
     if (!result || !result.duplicate) await writeLibrary(library, token);
-    return send(res, 200, { ok: true, ...shelfLibrary(library), ...result });
+    return send(res, 200, { ok: true, sealed: Boolean(password()), ...result });
   } catch (error) {
     const status = error.status || 500;
     if (status >= 500) console.error("bookmark", error && error.message);
