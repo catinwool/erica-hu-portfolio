@@ -1163,7 +1163,6 @@
           margin-top: 0.7rem;
         }
 
-        .piece-preview,
         .piece-tags {
           display: none;
         }
@@ -1172,6 +1171,32 @@
           grid-template-columns: minmax(0, 1fr);
           row-gap: 0.22rem;
           padding: 1.05rem 0 1.2rem;
+        }
+
+        .pieces a:has(.piece-preview) {
+          grid-template-columns: minmax(0, 1fr) 4.6rem;
+          column-gap: 0.9rem;
+          align-items: start;
+        }
+
+        .piece-preview {
+          display: block;
+          grid-column: 2;
+          grid-row: 1 / span 4;
+          width: 4.6rem;
+          height: 4.6rem;
+          margin: 0.12rem 0 0;
+          justify-self: end;
+          align-self: start;
+          object-fit: cover;
+          object-position: center 22%;
+        }
+
+        .pieces a:has(.piece-preview) .piece-title,
+        .pieces a:has(.piece-preview) time,
+        .pieces a:has(.piece-preview) .byline,
+        .pieces a:has(.piece-preview) .piece-source {
+          grid-column: 1;
         }
 
         .pieces time {
@@ -1495,8 +1520,8 @@
 
       function iconImage(src) {
         const name = String(src || "");
-        const width = name.match(/(?:[,&/_])w_(\d+)/);
-        const height = name.match(/(?:[,&/_])h_(\d+)/);
+        const width = name.match(/(?:[,&/_])w_(\d+)/) || name.match(/[?&]w=(\d+)/);
+        const height = name.match(/(?:[,&/_])h_(\d+)/) || name.match(/[?&]h=(\d+)/);
         const file = name.match(/_(\d{2,5})x(\d{2,5})\./);
         const w = width ? Number(width[1]) : 0;
         const h = height ? Number(height[1]) : 0;
@@ -1517,6 +1542,7 @@
         if (/\.svg(?:$|\?)/.test(name) && label.length < 12) return true;
         if (/\blogo\b|logotype|wordmark|favicon|apple-touch|site-icon|avatar/.test(name + " " + label)) return true;
         if (/\bicon\b/.test(label) && label.length < 48) return true;
+        if (/\/themes\/[^?]+\/assets\//.test(name)) return true;
         return false;
       }
 

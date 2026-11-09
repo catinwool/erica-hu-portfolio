@@ -787,8 +787,8 @@ function absoluteUrl(value, base) {
 
 function pictureSize(src) {
   const name = String(src || "");
-  const width = name.match(/(?:[,&/_])w_(\d+)/);
-  const height = name.match(/(?:[,&/_])h_(\d+)/);
+  const width = name.match(/(?:[,&/_])w_(\d+)/) || name.match(/[?&]w=(\d+)/);
+  const height = name.match(/(?:[,&/_])h_(\d+)/) || name.match(/[?&]h=(\d+)/);
   const file = name.match(/_(\d{2,5})x(\d{2,5})\./);
   return {
     width: width ? Number(width[1]) : 0,
@@ -815,6 +815,7 @@ function logoImage(src, alt) {
   if (/\.svg(?:$|\?)/.test(name) && label.length < 12) return true;
   if (/\blogo\b|logotype|wordmark|favicon|apple-touch|site-icon|avatar/.test(name + " " + label)) return true;
   if (/\bicon\b/.test(label) && label.length < 48) return true;
+  if (/\/themes\/[^?]+\/assets\//.test(name)) return true;
   return false;
 }
 
@@ -829,6 +830,9 @@ function authorPortrait(src, alt, author) {
   const name = plainName(author);
   const label = plainName(alt);
   if (name.length > 2 && label === name) return true;
+  const size = pictureSize(src);
+  const square = size.width && size.height && size.width <= 220 && size.height <= 220 && Math.abs(size.width - size.height) <= 24;
+  if (square && /^(a |an )?(man|woman|person|portrait)\b/.test(label)) return true;
   const file = String(src || "").toLowerCase();
   if (!/headshot|byline|avatar|author[-_]?photo|blurple/.test(file)) return false;
   const parts = name.split(" ").filter((part) => part.length > 2);
@@ -851,6 +855,7 @@ function dropSavedMarks(library) {
 function decorativeImage(src, alt) {
   const name = String(src || "").toLowerCase();
   if (logoImage(name, alt)) return true;
+  if (/\/themes\/[^?]+\/assets\//.test(name)) return true;
   if (/\.svg(?:$|\?)/.test(name) && !alt) return true;
   return /underline|frame-|\/logo|icon|sprite|\/share|plugin|pixel|spacer|badge|opengraph/.test(name);
 }
