@@ -1371,6 +1371,19 @@ async function saveArticle(library, body) {
   return { article };
 }
 
+async function refetchArticle(library, body) {
+  const article = findArticle(library, body.articleId);
+  if (!article.url) fail(400, "That piece has no link to fetch.");
+  const page = await readPage(article.url);
+  const parsed = await parsePiece(page.html, article.url);
+  if (parsed.title) article.title = parsed.title;
+  if (parsed.author) article.author = parsed.author;
+  if (parsed.site) article.site = parsed.site;
+  article.paragraphs = parsed.paragraphs;
+  article.blocks = parsed.blocks;
+  return { article };
+}
+
 function passageOf(article) {
   const source = Array.isArray(article.blocks) && article.blocks.length ? article.blocks : article.paragraphs;
   const parts = [];
@@ -1459,6 +1472,7 @@ function removeArticle(library, body) {
 function apply(library, body) {
   const kind = body && body.kind;
   if (kind === "save") return saveArticle(library, body);
+  if (kind === "refetch") return refetchArticle(library, body);
   if (kind === "keep") return keepQuote(library, body);
   if (kind === "ink") return tintQuote(library, body);
   if (kind === "let-go") return letGo(library, body);

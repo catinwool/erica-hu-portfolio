@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..720;1,7..72,200..720&family=Source+Sans+3:ital,wght@0,400;0,560;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500&family=Literata:ital,opsz,wght@0,7..72,200..720;1,7..72,200..720&family=Source+Sans+3:ital,wght@0,400;0,560;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=swap"
       rel="stylesheet"
     />
     <style>
@@ -98,7 +98,7 @@
 
       .shelf {
         display: grid;
-        grid-template-columns: 13.5rem minmax(0, 1fr);
+        grid-template-columns: 12.25rem minmax(0, 1fr);
         min-height: 100vh;
       }
 
@@ -108,19 +108,60 @@
         height: 100vh;
         display: flex;
         flex-direction: column;
-        padding: 2.6rem 1.35rem 1.5rem 1.7rem;
+        padding: 2.15rem 1.15rem 1.25rem 1.35rem;
         border-right: 1px solid var(--rule);
         font-family: "Source Sans 3", "Avenir Next", "Segoe UI", sans-serif;
         font-style: normal;
-        font-size: 1.02rem;
+        font-size: 0.98rem;
         font-weight: 400;
         line-height: 1.3;
       }
 
+      .icon {
+        display: inline-grid;
+        place-items: center;
+        width: 2rem;
+        height: 2rem;
+        color: var(--ink-faint);
+        text-decoration: none;
+      }
+
+      .icon svg {
+        display: block;
+        width: 1.05rem;
+        height: 1.05rem;
+      }
+
+      .icon:hover,
+      .icon[aria-current="page"],
+      .icon[aria-pressed="true"] {
+        color: var(--ink);
+      }
+
+      .icon[aria-current="page"] {
+        color: var(--accent);
+      }
+
+      .icon[hidden] {
+        display: none;
+      }
+
+      .icon:disabled {
+        opacity: 0.4;
+      }
+
+      .name,
+      .stack h1.brand {
+        font-family: Fraunces, "Iowan Old Style", Palatino, Georgia, serif;
+        font-style: italic;
+        font-weight: 500;
+        font-optical-sizing: auto;
+        letter-spacing: -0.03em;
+      }
+
       .name {
-        font-size: 1.2rem;
-        font-weight: 560;
-        letter-spacing: -0.01em;
+        font-size: 1.55rem;
+        line-height: 1;
         text-decoration: none;
       }
 
@@ -199,17 +240,32 @@
       }
 
       .search {
-        margin-top: 1.2rem;
+        position: relative;
+        margin-top: 0.85rem;
+      }
+
+      .search-mark {
+        position: absolute;
+        left: 0;
+        top: 0.42rem;
+        width: 0.85rem;
+        height: 0.85rem;
+        color: var(--ink-faint);
+        pointer-events: none;
       }
 
       .search input {
         width: 100%;
         border: 0;
-        border-bottom: 1px solid var(--rule);
+        border-bottom: 1px solid transparent;
         border-radius: 0;
         background: transparent;
         font-style: normal;
-        padding: 0.18rem 0 0.32rem;
+        padding: 0.22rem 0 0.32rem 1.25rem;
+      }
+
+      .search input:focus {
+        border-bottom-color: var(--rule);
       }
 
       .search input::placeholder {
@@ -219,32 +275,27 @@
 
       .menu-views {
         display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.28rem;
-        margin-top: 1.15rem;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.1rem;
+        margin-top: 0.85rem;
       }
 
-      .menu-views a,
       .menu-tags a {
         text-decoration: none;
         color: var(--ink);
       }
 
-      .menu-views a[aria-current="page"],
       .menu-tags a[aria-current="true"] {
         color: var(--ink);
         font-weight: 560;
       }
 
-      .menu-views a:hover,
+      .menu-views a.icon[aria-current="page"],
+      .menu-views a.icon:hover,
       .menu-tags a:hover,
       .menu-tags a.folder-drop {
         color: var(--accent);
-      }
-
-      .menu-views a[data-view="save"] {
-        margin-top: 0.85rem;
       }
 
       .menu-tags {
@@ -262,28 +313,19 @@
 
       .menu-lock {
         margin-top: auto;
-        padding-top: 1.2rem;
-        color: var(--ink-faint);
-        font-size: 0.82rem;
-        font-weight: 560;
-        letter-spacing: 0.04em;
-        text-align: left;
-        text-transform: uppercase;
-      }
-
-      .menu-lock:hover {
-        color: var(--accent);
+        margin-left: -0.45rem;
       }
 
       .menu-label,
       .search-label {
-        margin: 0 0 0.45rem;
-        color: var(--ink-soft);
-        font-style: normal;
-        font-size: 0.82rem;
-        font-weight: 560;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
+        margin: 0 0 0.4rem;
+        color: var(--ink-faint);
+        font-style: italic;
+        font-family: var(--type);
+        font-size: 0.92rem;
+        font-weight: 400;
+        letter-spacing: 0;
+        text-transform: none;
       }
 
       .menu-label-row {
@@ -300,25 +342,8 @@
 
       .folder-rank {
         display: flex;
-        gap: 0.65rem;
-        margin: 0;
-      }
-
-      .folder-rank button {
-        color: var(--ink-soft);
-        font-style: normal;
-        font-size: 0.82rem;
-        font-weight: 560;
-        letter-spacing: 0.03em;
-        text-transform: uppercase;
-      }
-
-      .folder-rank button[aria-pressed="true"] {
-        color: var(--ink);
-      }
-
-      .folder-rank button:hover {
-        color: var(--accent);
+        gap: 0;
+        margin: 0 -0.35rem 0 0;
       }
 
       .folder-group {
@@ -338,11 +363,12 @@
         display: block;
         margin: 0 0 0.35rem;
         color: var(--ink-faint);
-        font-style: normal;
-        font-size: 0.82rem;
-        font-weight: 560;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
+        font-family: var(--type);
+        font-style: italic;
+        font-size: 0.92rem;
+        font-weight: 400;
+        letter-spacing: 0;
+        text-transform: none;
         text-decoration: none;
       }
 
@@ -597,9 +623,7 @@
       }
 
       .back {
-        color: var(--ink-faint);
-        font-style: italic;
-        text-decoration: none;
+        margin-left: -0.45rem;
       }
 
       .reader h1,
@@ -686,20 +710,13 @@
       }
 
       .contents {
-        margin: 0.45rem 0 2.1rem;
-        padding: 0.95rem 1.15rem 0.85rem;
-        background: #f4efe8;
-        border-radius: 1rem;
+        margin: 0.2rem 0 1.8rem;
+        padding: 0;
         font-family: "Source Sans 3", "Avenir Next", "Segoe UI", sans-serif;
       }
 
       .contents .menu-label {
-        margin: 0 0 0.35rem;
-        font-family: inherit;
-        font-style: normal;
-        font-size: 0.78rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
+        margin: 0 0 0.2rem;
       }
 
       .contents ol {
@@ -857,25 +874,8 @@
 
       .quote-rank {
         display: flex;
-        gap: 0.85rem;
-        margin: 0 0 0.2rem;
-        font-family: "Source Sans 3", "Avenir Next", "Segoe UI", sans-serif;
-      }
-
-      .quote-rank button {
-        color: var(--ink-soft);
-        font-size: 0.82rem;
-        font-weight: 560;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-      }
-
-      .quote-rank button[aria-pressed="true"] {
-        color: var(--ink);
-      }
-
-      .quote-rank button:hover {
-        color: var(--accent);
+        gap: 0.1rem;
+        margin: 0 0 0.35rem -0.45rem;
       }
 
       .books {
@@ -972,13 +972,9 @@
 
       .piece-actions {
         display: flex;
-        gap: 1.15rem;
-        margin: 0.45rem 0 0;
-      }
-
-      .remove-piece {
-        color: var(--ink-faint);
-        font-style: italic;
+        align-items: center;
+        gap: 0.15rem;
+        margin: 0.35rem 0 0 -0.45rem;
       }
 
       .remove-piece[data-sure="yes"] {
@@ -1015,15 +1011,13 @@
 
       .form-actions {
         display: flex;
-        gap: 1.25rem;
-        align-items: baseline;
-        margin-top: 1.35rem;
+        gap: 0.15rem;
+        align-items: center;
+        margin: 1.15rem 0 0 -0.45rem;
       }
 
-      .form-actions a {
-        color: var(--ink-faint);
-        font-style: italic;
-        text-decoration: none;
+      .form-actions button[type="submit"] {
+        color: var(--ink);
       }
 
       .float {
@@ -1129,15 +1123,7 @@
         }
 
         .menu-views {
-          flex-direction: row;
-          flex-wrap: wrap;
-          align-items: baseline;
-          gap: 0.35rem 1.05rem;
-          margin-top: 0.7rem;
-        }
-
-        .menu-views a[data-view="save"] {
-          margin-top: 0;
+          margin-top: 0.45rem;
         }
 
         .menu-toggle:not([hidden]) {
@@ -1153,8 +1139,9 @@
         }
 
         .menu.folders-open .menu-lock:not([hidden]) {
-          display: block;
-          margin-top: 0.85rem;
+          display: grid;
+          margin-top: 0.7rem;
+          margin-left: -0.45rem;
         }
 
         .menu.folders-open .menu-tags:not([hidden]) {
@@ -1273,15 +1260,19 @@
           </button>
         </div>
         <form class="search" role="search">
+          <svg class="search-mark" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="1.6" />
+            <path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
           <input id="search" name="q" type="search" placeholder="Search" aria-label="Search the shelf" autocomplete="off" enterkeyhint="search" />
         </form>
         <nav class="menu-views" aria-label="Library">
-          <a href="#articles" data-view="articles">Articles</a>
-          <a href="#quotes" data-view="quotes">Quotes</a>
-          <a href="#save" data-view="save">Save a piece</a>
+          <a class="icon" href="#articles" data-view="articles" aria-label="Articles" title="Articles"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg></a>
+          <a class="icon" href="#quotes" data-view="quotes" aria-label="Quotes" title="Quotes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.5c0 1.4-1 2.5-2.4 2.5S4.2 17.9 4.2 16.5 6 11.2 9 9.6v6.9zm8.2 0c0 1.4-1 2.5-2.4 2.5s-2.4-1.1-2.4-2.5 1.8-5.3 4.8-6.9v6.9z" fill="currentColor" /></svg></a>
+          <a class="icon" href="#save" data-view="save" aria-label="Save a piece" title="Save a piece"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg></a>
         </nav>
         <nav class="menu-tags" id="tags" aria-label="Folders" hidden></nav>
-        <button type="button" id="lock" class="menu-lock" hidden>Lock</button>
+        <button type="button" id="lock" class="menu-lock icon" hidden aria-label="Lock" title="Lock"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 11V8.2a4 4 0 0 1 8 0V11M6.5 11h11v8.5h-11z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /></svg></button>
       </aside>
       <div class="column">
         <main id="main"></main>
@@ -1308,6 +1299,25 @@
       </svg>
     </button>
     <script>
+      function icon(name) {
+        const stroke = 'fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"';
+        const paths = {
+          alpha: `<path ${stroke} d="M5 7h6M5 12h10M5 17h14"/>`,
+          recent: `<circle ${stroke} cx="12" cy="12" r="7"/><path ${stroke} d="M12 8.5V12l2.5 2"/>`,
+          theme: `<path ${stroke} d="M4.5 12.5 12 5h6.5v6.5L11 19z"/><circle cx="15.2" cy="8.8" r="0.8" fill="currentColor"/>`,
+          piece: `<path ${stroke} d="M7 4.5h7l4 4V19.5H7zM14 4.5V9h4.2"/>`,
+          back: `<path ${stroke} d="M15 6 9 12l6 6"/>`,
+          external: `<path ${stroke} d="M8 16 16 8M10 8h6v6"/>`,
+          trash: `<path ${stroke} d="M5 7h14M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7M7.2 7l.7 12.1a1.2 1.2 0 0 0 1.2 1.1h5.8a1.2 1.2 0 0 0 1.2-1.1L16.8 7"/>`,
+          close: `<path ${stroke} d="M7 7l10 10M17 7 7 17"/>`,
+          check: `<path ${stroke} d="M6 12.5 10 16.5 18 7.5"/>`,
+          mail: `<path ${stroke} d="M4.5 7.5h15v10h-15zM4.5 8l7.5 5.5L19.5 8"/>`,
+          again: `<path ${stroke} d="M19 12a7 7 0 1 1-2.1-5M19 4.5V8h-3.5"/>`,
+          open: `<path ${stroke} d="M5 12h12M13 7l5 5-5 5"/>`,
+        };
+        return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name] || ""}</svg>`;
+      }
+
       const state = {
         articles: [],
         quotes: [],
@@ -1639,7 +1649,7 @@
         const labelEl = button.querySelector(".menu-toggle-label");
         if (labelEl) labelEl.textContent = label;
         button.setAttribute("aria-label", label);
-        nav.innerHTML = `<div class="menu-label-row"><p class="menu-label">${label}</p><p class="folder-rank"><button type="button" data-rank="alpha" aria-pressed="${rank === "alpha" ? "true" : "false"}">A–Z</button><button type="button" data-rank="recent" aria-pressed="${rank === "recent" ? "true" : "false"}">Recent</button></p></div>${live.map(link).join("")}${archiveBlock}`;
+        nav.innerHTML = `<div class="menu-label-row"><p class="menu-label">${label}</p><p class="folder-rank"><button type="button" class="icon" data-rank="alpha" aria-pressed="${rank === "alpha" ? "true" : "false"}" aria-label="A to Z" title="A to Z">${icon("alpha")}</button><button type="button" class="icon" data-rank="recent" aria-pressed="${rank === "recent" ? "true" : "false"}" aria-label="Recent" title="Recent">${icon("recent")}</button></p></div>${live.map(link).join("")}${archiveBlock}`;
         paintFolders();
       }
 
@@ -1964,7 +1974,7 @@
 
       function quoteSwitch() {
         const group = state.quoteGroup === "piece" ? "piece" : "theme";
-        return `<p class="quote-rank"><button type="button" data-group="theme" aria-pressed="${group === "theme" ? "true" : "false"}">Themes</button><button type="button" data-group="piece" aria-pressed="${group === "piece" ? "true" : "false"}">Pieces</button></p>`;
+        return `<p class="quote-rank"><button type="button" class="icon" data-group="theme" aria-pressed="${group === "theme" ? "true" : "false"}" aria-label="Themes" title="Themes">${icon("theme")}</button><button type="button" class="icon" data-group="piece" aria-pressed="${group === "piece" ? "true" : "false"}" aria-label="Pieces" title="Pieces">${icon("piece")}</button></p>`;
       }
 
       function bookCard(name, quote, count) {
@@ -2056,7 +2066,7 @@
 
       function renderReader(article) {
         if (!article) {
-          main.innerHTML = `<a class="back" href="#articles">Shelf</a><p class="empty">That piece isn't on the shelf.</p>`;
+          main.innerHTML = `<a class="back icon" href="#articles" aria-label="Shelf" title="Shelf">${icon("back")}</a><p class="empty">That piece isn't on the shelf.</p>`;
           return;
         }
         const bits = sourceBits(article);
@@ -2072,9 +2082,9 @@
           )
           .join("");
         const original = article.url
-          ? `<a class="original" href="${esc(article.url)}" target="_blank" rel="noreferrer">Original</a>`
+          ? `<a class="original icon" href="${esc(article.url)}" target="_blank" rel="noreferrer" aria-label="Original" title="Original">${icon("external")}</a>`
           : "";
-        const actions = `<p class="piece-actions">${original}<button type="button" class="remove-piece" data-act="remove">Remove</button></p>`;
+        const actions = `<p class="piece-actions">${original}<button type="button" class="remove-piece icon" data-act="remove" aria-label="Remove" title="Remove">${icon("trash")}</button></p>`;
         const blocks = article.blocks && article.blocks.length ? article.blocks : article.paragraphs || [];
         const sections = [];
         blocks.forEach((block) => {
@@ -2095,7 +2105,7 @@
                 )
                 .join("")}</ol></nav>`
             : "";
-        main.innerHTML = `<article class="reader"><a class="back" href="#articles">Shelf</a><h1 draggable="true" data-article="${esc(article.id)}">${esc(article.title)}</h1>${byline}${bits.length ? `<p class="meta">${esc(bits.join(" · "))}</p>` : ""}${folderLink}${actions}<div class="tagline"><ul>${tags}</ul><form data-act="tag"><input name="tag" aria-label="Add a tag" placeholder="Add a tag" maxlength="32" autocomplete="off"></form></div>${contents}<div class="body" id="body"></div><p id="notice" class="notice" role="status">${esc(state.error)}</p></article>`;
+        main.innerHTML = `<article class="reader"><a class="back icon" href="#articles" aria-label="Shelf" title="Shelf">${icon("back")}</a><h1 draggable="true" data-article="${esc(article.id)}">${esc(article.title)}</h1>${byline}${bits.length ? `<p class="meta">${esc(bits.join(" · "))}</p>` : ""}${folderLink}${actions}<div class="tagline"><ul>${tags}</ul><form data-act="tag"><input name="tag" aria-label="Add a tag" placeholder="Add a tag" maxlength="32" autocomplete="off"></form></div>${contents}<div class="body" id="body"></div><p id="notice" class="notice" role="status">${esc(state.error)}</p></article>`;
         const body = document.getElementById("body");
         const paragraphs = article.paragraphs || [];
         const kept = state.quotes
@@ -2104,12 +2114,18 @@
         if (!paragraphs.length) {
           const note = document.createElement("p");
           note.className = "empty";
-          note.textContent = article.prose && !article.blocks
+          note.textContent = article.prose && !article.blocks && !article.bodyError
             ? "Opening this piece."
             : kept.length
               ? "The piece itself isn't here yet. These are the lines kept from it."
               : "The piece itself isn't here yet.";
           body.appendChild(note);
+          if (article.url && (article.bodyError || article.prose === false)) {
+            const retry = document.createElement("div");
+            retry.className = "form-actions";
+            retry.innerHTML = `<button type="button" class="icon" data-act="fetch" aria-label="Fetch this piece" title="Fetch this piece">${icon("again")}</button>`;
+            body.appendChild(retry);
+          }
           for (const quote of kept) {
             const p = document.createElement("p");
             const mark = document.createElement("mark");
@@ -2236,15 +2252,15 @@
       }
 
       function renderSave() {
-        main.innerHTML = `<form class="stack" data-act="save"><h1>Save a piece</h1><p class="lede">Drop a link. The page becomes the piece.</p><label for="url">Link</label><input id="url" name="url" type="text" inputmode="url" maxlength="500" autocomplete="off" spellcheck="false" placeholder="https://" required autofocus><p id="notice" class="notice" role="status">${esc(state.error)}</p><div class="form-actions"><button type="submit">Save</button><a href="#articles">Cancel</a></div></form>`;
+        main.innerHTML = `<form class="stack" data-act="save"><h1>Save a piece</h1><p class="lede">Drop a link. The page becomes the piece.</p><label for="url">Link</label><input id="url" name="url" type="text" inputmode="url" maxlength="500" autocomplete="off" spellcheck="false" placeholder="https://" required autofocus><p id="notice" class="notice" role="status">${esc(state.error)}</p><div class="form-actions"><button type="submit" class="icon" aria-label="Save" title="Save">${icon("check")}</button><button type="button" class="icon" data-act="fetch" aria-label="Fetch again" title="Fetch again"${state.error ? "" : " hidden"}>${icon("again")}</button><a class="icon" href="#articles" aria-label="Cancel" title="Cancel">${icon("close")}</a></div></form>`;
       }
 
       function renderLock() {
         if (state.step === "code") {
-          main.innerHTML = `<form class="stack" data-act="code"><h1>Bookmark</h1><p class="lede">A six-digit code is in your inbox. It lasts ten minutes.</p><label for="code">Code</label><input id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" required autofocus><p id="notice" class="notice" role="status">${esc(state.error)}</p><div class="form-actions"><button type="submit">Confirm</button><button type="button" data-act="restart">Send another code</button></div></form>`;
+          main.innerHTML = `<form class="stack" data-act="code"><h1 class="brand">Bookmark</h1><p class="lede">A six-digit code is in your inbox. It lasts ten minutes.</p><label for="code">Code</label><input id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" required autofocus><p id="notice" class="notice" role="status">${esc(state.error)}</p><div class="form-actions"><button type="submit" class="icon" aria-label="Confirm" title="Confirm">${icon("check")}</button><button type="button" class="icon" data-act="restart" aria-label="Send another code" title="Send another code">${icon("again")}</button></div></form>`;
           return;
         }
-        main.innerHTML = `<div class="stack"><h1>Bookmark</h1><p class="lede">This shelf is locked. This browser stays signed in.</p><form data-act="mail"><div class="form-actions"><button type="submit">Email me a code</button></div></form><form data-act="unlock"><label for="password">Key</label><input id="password" name="password" type="password" autocomplete="current-password" required><p id="notice" class="notice" role="status">${esc(state.error)}</p><div class="form-actions"><button type="submit">Open</button></div></form></div>`;
+        main.innerHTML = `<div class="stack"><h1 class="brand">Bookmark</h1><p class="lede">This shelf is locked. This browser stays signed in.</p><form data-act="mail"><div class="form-actions"><button type="submit" class="icon" aria-label="Email me a code" title="Email me a code">${icon("mail")}</button></div></form><form data-act="unlock"><label for="password">Key</label><input id="password" name="password" type="password" autocomplete="current-password" required><p id="notice" class="notice" role="status">${esc(state.error)}</p><div class="form-actions"><button type="submit" class="icon" aria-label="Open" title="Open">${icon("open")}</button></div></form></div>`;
       }
 
       function render() {
@@ -2407,6 +2423,55 @@
         state.error = message || "";
         const notice = document.getElementById("notice");
         if (notice) notice.textContent = state.error;
+        const again = document.querySelector("form[data-act='save'] [data-act='fetch']");
+        if (again) again.hidden = !state.error;
+      }
+
+      let fetchFlight = "";
+
+      async function fetchPiece(button) {
+        const form = button.closest("form[data-act='save']");
+        if (form) {
+          button.hidden = true;
+          form.requestSubmit();
+          return;
+        }
+        const article = articleById(state.articleId);
+        if (!article || !article.url || fetchFlight === article.id) return;
+        fetchFlight = article.id;
+        button.disabled = true;
+        state.error = "";
+        const note = document.querySelector("#body .empty");
+        if (note) note.textContent = "Reading the page.";
+        try {
+          if (article.prose !== false) {
+            article.bodyError = false;
+            await loadBody(article.id);
+            const fresh = articleById(article.id);
+            if (fresh && (fresh.paragraphs || []).length) {
+              fetchFlight = "";
+              return;
+            }
+          }
+          const data = await api({ kind: "refetch", articleId: article.id });
+          const stored = articleById(article.id);
+          if (stored && data.article) {
+            stored.paragraphs = data.article.paragraphs || [];
+            stored.blocks = data.article.blocks || [];
+            stored.prose = true;
+            stored.bodyError = false;
+            if (data.article.title) stored.title = data.article.title;
+            if (data.article.author) stored.author = data.article.author;
+            if (data.article.site) stored.site = data.article.site;
+          }
+          state.error = "";
+        } catch (error) {
+          const stored = articleById(article.id);
+          if (stored) stored.bodyError = true;
+          state.error = error.message;
+        }
+        if (fetchFlight === article.id) fetchFlight = "";
+        if (state.view === "read" && state.articleId === article.id) render();
       }
 
       async function loadBody(id) {
@@ -2512,6 +2577,10 @@
         const button = event.target.closest("[data-act]");
         if (!button) return;
         const act = button.dataset.act;
+        if (act === "fetch") {
+          await fetchPiece(button);
+          return;
+        }
         if (act === "restart") {
           try {
             const data = await api({ kind: "unlock", mail: true });
@@ -2535,7 +2604,8 @@
         if (act === "remove") {
           if (button.dataset.sure !== "yes") {
             button.dataset.sure = "yes";
-            button.textContent = "Remove this piece?";
+            button.setAttribute("aria-label", "Remove this piece?");
+            button.title = "Remove this piece?";
             return;
           }
           try {
@@ -2666,8 +2736,10 @@
         if (submit) {
           submit.disabled = true;
           if (form.dataset.act === "save") {
-            submit.dataset.label = submit.textContent;
-            submit.textContent = "Reading…";
+            const notice = form.querySelector(".notice");
+            if (notice) notice.textContent = "Reading the page.";
+            const again = form.querySelector("[data-act='fetch']");
+            if (again) again.hidden = true;
           }
         }
         try {
@@ -2721,10 +2793,7 @@
           }
         } catch (error) {
           say(error.message);
-          if (submit) {
-            submit.disabled = false;
-            if (submit.dataset.label) submit.textContent = submit.dataset.label;
-          }
+          if (submit) submit.disabled = false;
         }
       });
 
