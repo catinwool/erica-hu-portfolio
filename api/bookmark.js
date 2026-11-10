@@ -835,36 +835,45 @@ function absoluteUrl(value, base) {
 
 function pictureSize(src) {
   const name = String(src || "");
-  const width = name.match(/(?:[,&/_])w_(\d+)/) || name.match(/[?&]w=(\d+)/);
-  const height = name.match(/(?:[,&/_])h_(\d+)/) || name.match(/[?&]h=(\d+)/);
+  const width =
+    name.match(/(?:[,&/_])w_(\d+)/) ||
+    name.match(/[?&](?:w|width)=(\d+)/) ||
+    name.match(/images-prod\.(?:dazeddigital|anothermag)\.com\/(\d+)\//);
+  const height = name.match(/(?:[,&/_])h_(\d+)/) || name.match(/[?&](?:h|height)=(\d+)/);
   const file = name.match(/_(\d{2,5})x(\d{2,5})\./);
+  const tumblr = name.match(/\/s(\d{2,5})x(\d{2,5})\//);
   return {
     width: width ? Number(width[1]) : 0,
     height: height ? Number(height[1]) : 0,
-    fileWidth: file ? Number(file[1]) : 0,
-    fileHeight: file ? Number(file[2]) : 0,
+    fileWidth: Math.max(file ? Number(file[1]) : 0, tumblr ? Number(tumblr[1]) : 0),
+    fileHeight: Math.max(file ? Number(file[2]) : 0, tumblr ? Number(tumblr[2]) : 0),
   };
 }
 
 function iconImage(src) {
   const size = pictureSize(src);
   if (size.width && size.height && size.width <= 160 && size.height <= 160) return true;
-  if (size.width && size.width <= 140 && !size.height) return true;
-  if (size.height && size.height <= 140 && !size.width) return true;
   if (size.width && size.height && size.height <= 140 && size.width <= 240) return true;
   if (size.fileHeight && size.fileHeight < 180 && size.fileWidth / size.fileHeight > 4) return true;
+  if (size.width && !size.height && size.width <= 64) return true;
+  if (size.height && !size.width && size.height <= 64) return true;
   return false;
 }
 
-function logoImage(src, alt) {
+function chromeImage(src, alt) {
   const name = String(src || "").toLowerCase();
   const label = String(alt || "").toLowerCase();
-  if (iconImage(name)) return true;
   if (/\.svg(?:$|\?)/.test(name) && label.length < 12) return true;
   if (/\blogo\b|logotype|wordmark|favicon|apple-touch|site-icon|avatar/.test(name + " " + label)) return true;
   if (/\bicon\b/.test(label) && label.length < 48) return true;
   if (/\/themes\/[^?]+\/assets\//.test(name)) return true;
+  if (/underline|frame-|\/logo|icon|sprite|\/share|plugin|pixel|spacer|badge|opengraph/.test(name)) return true;
   return false;
+}
+
+function logoImage(src, alt) {
+  if (iconImage(src)) return true;
+  return chromeImage(src, alt);
 }
 
 function plainName(value) {
@@ -900,23 +909,173 @@ function dropSavedMarks(library) {
   }
 }
 
-function decorativeImage(src, alt) {
-  const name = String(src || "").toLowerCase();
-  if (logoImage(name, alt)) return true;
-  if (/\/themes\/[^?]+\/assets\//.test(name)) return true;
-  if (/\.svg(?:$|\?)/.test(name) && !alt) return true;
-  return /underline|frame-|\/logo|icon|sprite|\/share|plugin|pixel|spacer|badge|opengraph/.test(name);
+function sourceCandidates(value) {
+  const found = [];
+  for (const part of String(value || "").split(",")) {
+    const bits = part.trim().split(/\s+/);
+    if (!bits[0] || bits[0].startsWith("data:")) continue;
+    const desc = bits[1] || "";
+    let width = 0;
+    if (/^\d+w$/i.test(desc)) width = Number(desc);
+    else if (/^(\d+(?:\.\d+)?)x$/i.test(desc)) width = Math.round(parseFloat(desc) * 800);
+    found.push({ url: bits[0], width });
+  }
+  return found;
+}
+
+function imageCandidates(node) {
+  const found = [];
+  const add = (url, width) => {
+    if (!url || String(url).startsWith("data:")) return;
+    found.push({ url, width: width || 0 });
+  };
+  const attr = (element, name) => {
+    if (!element || !element.getAttribute) return "";
+    const direct = element.getAttribute(name);
+    if (direct) return direct;
+    const found = [...(element.attributes || [])].find((item) => item.name.toLowerCase() === name);
+    return found ? found.value || "" : "";
+  };
+  for (const name of ["data-large-file", "data-orig-file", "data-original", "data-lazy-src", "data-src"]) {
+    add(attr(node, name), 0);
+  }
+  for (const name of ["srcset", "data-srcset"]) {
+    for (const item of sourceCandidates(attr(node, name))) add(item.url, item.width);
+  }
+  const picture = node.closest && node.closest("picture");
+  if (picture) {
+    for (const source of picture.querySelectorAll("source")) {
+      for (const item of sourceCandidates(attr(source, "srcset") || attr(source, "data-srcset"))) add(item.url, item.width);
+    }
+  }
+  add(attr(node, "src"), 0);
+  return found;
+}
+
+function largerImage(raw, knownWidth) {
+  const current = pictureSize(raw);
+  if ((current.width || 0) >= 1200) return raw;
+  let url;
+  try {
+    url = new URL(raw);
+  } catch {
+    return raw;
+  }
+  const signed = ["s", "sig", "signature", "token", "itok"].some((key) => {
+    const value = url.searchParams.get(key);
+    return value && value !== "none";
+  });
+  if (signed) return raw;
+  const nested = url.searchParams.get("src");
+  if (nested && /^https?:\/\//i.test(nested) && (current.width || 0) < 1200) return nested;
+  if (current.width && current.height && current.width <= 160 && current.height <= 160) return raw;
+  if ((knownWidth || 0) >= 1200 && !(current.width && current.width < 1200)) return raw;
+
+  const substack = raw.match(/substackcdn\.com\/image\/fetch\/.*?\/(https?%3A%2F%2F.+)$/i);
+  if (substack && (current.width || knownWidth || 0) < 1200) {
+    try {
+      return decodeURIComponent(substack[1]);
+    } catch {
+      return raw;
+    }
+  }
+
+  const wix = raw.match(/^(https:\/\/static\.wixstatic\.com\/media\/[^/]+\.(?:jpe?g|png|webp|gif))/i);
+  if (wix && /\/v1\/(?:fill|fit|crop)\//.test(raw)) return wix[1];
+
+  if (/^images-prod\.(?:dazeddigital|anothermag)\.com$/i.test(url.hostname) && current.width && current.width < 1200) {
+    return raw.replace(/^(https:\/\/images-prod\.(?:dazeddigital|anothermag)\.com\/)\d+\//i, "$11600/");
+  }
+
+  if (url.hostname === "i.guim.co.uk") {
+    const width = Number(url.searchParams.get("width") || 0);
+    if (width && width < 1200) {
+      url.searchParams.set("width", "1600");
+      if (url.searchParams.get("dpr")) url.searchParams.set("dpr", "1");
+      return url.href;
+    }
+    return raw;
+  }
+
+  if (url.hostname === "res.cloudinary.com" || url.hostname.endsWith(".cloudinary.com")) {
+    return raw.replace(/(\/image\/(?:fetch|upload)\/[^/]*?)w_\d+/, "$1w_1600");
+  }
+
+  if (url.hostname.endsWith("medium.com") || url.hostname.includes("miro.medium")) {
+    return raw.replace(/\/(resize:fit:|max\/)(\d+)\//, (match, kind, width) => (Number(width) >= 1200 ? match : "/" + kind + "1600/"));
+  }
+
+  if (/\/wp-content\/uploads\//.test(url.pathname)) {
+    let sized = false;
+    for (const key of ["w", "width", "h", "height", "resize", "quality", "strip", "crop", "fit", "ssl"]) {
+      if (url.searchParams.has(key)) sized = true;
+      url.searchParams.delete(key);
+    }
+    if (sized) return url.href;
+  }
+
+  if (url.pathname.includes("/_next/image")) {
+    const width = Number(url.searchParams.get("w") || 0);
+    if (width && width < 1200) {
+      url.searchParams.set("w", "1920");
+      return url.href;
+    }
+    return raw;
+  }
+
+  if (url.hostname.includes("imgix") || url.searchParams.has("ixlib") || url.searchParams.has("auto") || url.searchParams.get("fit")) {
+    if (url.searchParams.has("w") && Number(url.searchParams.get("w")) < 1200) url.searchParams.set("w", "1600");
+    if (url.searchParams.has("width") && Number(url.searchParams.get("width")) < 1200) url.searchParams.set("width", "1600");
+    const quality = Number(url.searchParams.get("q") || 0);
+    if (quality && quality < 70) url.searchParams.set("q", "75");
+    const height = Number(url.searchParams.get("h") || url.searchParams.get("height") || 0);
+    if (height && height < 500) {
+      url.searchParams.delete("h");
+      url.searchParams.delete("height");
+    }
+    return url.href;
+  }
+
+  const asked = Number(url.searchParams.get("w") || url.searchParams.get("width") || 0);
+  if (asked && asked < 1200) {
+    if (url.searchParams.has("w")) url.searchParams.set("w", "1600");
+    if (url.searchParams.has("width")) url.searchParams.set("width", "1600");
+    const height = Number(url.searchParams.get("h") || url.searchParams.get("height") || 0);
+    if (height && height < 500) {
+      url.searchParams.delete("h");
+      url.searchParams.delete("height");
+    }
+    return url.href;
+  }
+
+  if (/\/w_\d+/.test(url.pathname) && current.width && current.width < 1200) {
+    url.pathname = url.pathname.replace(/\/w_\d+/, "/w_2560");
+    return url.href;
+  }
+
+  return raw;
 }
 
 function imageFrom(node, pageUrl) {
-  const src = node.getAttribute("src") || node.getAttribute("data-src") || "";
   const alt = cleanText(node.getAttribute("alt") || "", 240);
-  if (!src || decorativeImage(src, alt)) return null;
+  let best = "";
+  let bestRank = -1;
+  for (const item of imageCandidates(node)) {
+    const absolute = absoluteUrl(item.url, pageUrl);
+    if (!absolute || chromeImage(absolute, alt)) continue;
+    const size = pictureSize(absolute);
+    const rank = Math.max(item.width || 0, size.width || 0, size.fileWidth || 0);
+    if (rank > bestRank) {
+      best = absolute;
+      bestRank = rank;
+    }
+  }
+  if (!best) return null;
   const width = Number(node.getAttribute("width") || 0);
   const height = Number(node.getAttribute("height") || 0);
-  if ((width && width < 48) || (height && height < 48)) return null;
-  const image = cleanUrl(absoluteUrl(src, pageUrl));
-  if (!image) return null;
+  if (((width && width < 48) || (height && height < 48)) && bestRank < 48) return null;
+  const image = cleanUrl(largerImage(best, bestRank));
+  if (!image || chromeImage(image, alt) || iconImage(image)) return null;
   return { image, alt };
 }
 
@@ -1162,6 +1321,35 @@ function blockedPage(res, html) {
   return !res || !res.ok;
 }
 
+function facebookEmbed(target) {
+  let url;
+  try {
+    url = new URL(target);
+  } catch {
+    return "";
+  }
+  const host = url.hostname.replace(/^www\./, "");
+  if (host !== "facebook.com") return "";
+  if (!/\/posts\/|\/photos\/|story\.php|permalink\.php/.test(url.pathname + url.search)) return "";
+  const href = url.origin + url.pathname;
+  return "https://www.facebook.com/plugins/post.php?show_text=true&width=500&href=" + encodeURIComponent(href);
+}
+
+function facebookPost(document) {
+  const post = document.querySelector("[data-testid='post_message']");
+  if (!post) return null;
+  const lines = [...post.querySelectorAll("p, li")]
+    .map((node) => cleanText(node.textContent, 5000))
+    .filter((line) => line.length >= 2);
+  if (lines.join("").length < 80) return null;
+  const titled = lines.length > 1 && lines[0].length <= 90;
+  const title = titled ? lines[0] : cleanText(lines[0], 180);
+  const body = titled ? lines.slice(1) : lines;
+  const author = cleanText((document.querySelector("._50f4") || {}).textContent || "", 120);
+  const blocks = body.slice();
+  return { title, author, site: "Facebook", paragraphs: body, blocks };
+}
+
 async function fetchPage(target, timeout = 12000) {
   const res = await fetch(target, {
     redirect: "follow",
@@ -1246,6 +1434,17 @@ async function relayedPage(target) {
 }
 
 async function readPage(target) {
+  const embed = facebookEmbed(target);
+  if (embed) {
+    try {
+      const embedded = await fetchPage(embed);
+      if (embedded && embedded.res && embedded.res.ok && String(embedded.html || "").includes("post_message")) {
+        return { ...embedded, url: target };
+      }
+    } catch {
+      /* the public post page can still open */
+    }
+  }
   let page = null;
   try {
     page = await fetchPage(target);
@@ -1300,6 +1499,8 @@ async function parsePiece(html, pageUrl) {
   }
   const metaAuthor = cleanText(metaContent(document, 'meta[name="author"]'), 120);
   const siteName = cleanText(metaContent(document, 'meta[property="og:site_name"]'), 120);
+  const facebook = facebookPost(document);
+  if (facebook) return facebook;
   const poem = poemFrom(document);
   if (poem) {
     const site = siteName || hostnameOf(pageUrl);
@@ -1320,7 +1521,15 @@ async function parsePiece(html, pageUrl) {
   const piece = blocksFrom(article.content, pageUrl, parseHTML);
   if (hero && !piece.blocks.some((block) => block && block.image === hero.image)) piece.blocks.unshift(hero);
   const site = cleanText(article.siteName, 120) || siteName || hostnameOf(pageUrl);
-  const title = titleFrom(article.title, site);
+  let title = titleFrom(article.title, site);
+  if (/^post by @/i.test(titleFrom(article.title, site))) {
+    const heading = piece.blocks.find((block) => block && block.heading);
+    const pageTitle = titleFrom((document.querySelector("title") || {}).textContent, site);
+    title = (heading && heading.heading) || pageTitle || title;
+    const at = piece.blocks.findIndex((block) => block && block.heading === title);
+    if (at >= 0) piece.blocks.splice(at, 1);
+    if (piece.paragraphs[0] === title) piece.paragraphs.shift();
+  }
   const author = cleanText(String(article.byline || metaAuthor).replace(/^by\s+/i, ""), 120);
   piece.blocks = piece.blocks.filter((block) => !spareImage(block, author));
   const prose = piece.blocks.filter((block) => typeof block === "string" && block.length > 40);
