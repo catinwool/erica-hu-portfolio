@@ -761,6 +761,46 @@
         margin-top: 0.15rem;
       }
 
+      .body h3 {
+        margin: 1.55rem 0 0.45rem;
+        font-size: 1.08rem;
+        font-weight: 620;
+        letter-spacing: -0.02em;
+        line-height: 1.3;
+      }
+
+      .body h3.example {
+        margin-top: 1.2rem;
+        font-size: 1.02rem;
+      }
+
+      .body p.kicker {
+        margin: 0.2rem 0 1.4rem;
+        text-align: center;
+        font-size: 0.95rem;
+        letter-spacing: 0.01em;
+        color: var(--ink-faint);
+      }
+
+      .body p.label {
+        margin: 0.85rem 0 0.2rem;
+        font-style: italic;
+        font-size: 1.05rem;
+      }
+
+      .body p.aside {
+        margin: 0.4rem 0 1.15rem;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        color: var(--ink-faint);
+      }
+
+      .body sub,
+      .body sup {
+        font-size: 0.72em;
+        line-height: 0;
+      }
+
       .body blockquote {
         margin: 1.45rem 0 1.55rem;
         padding: 0.1rem 0 0.1rem 1.05rem;
@@ -1664,7 +1704,7 @@
       function readingTime(article) {
         const known = Number(article.minutes);
         const minutes = known || (() => {
-          const words = (article.paragraphs || []).join(" ").replace(/[\uE000-\uE003]/g, "").trim().split(/\s+/).filter(Boolean).length;
+          const words = (article.paragraphs || []).join(" ").replace(/[\uE000-\uE007]/g, "").trim().split(/\s+/).filter(Boolean).length;
           if (words < 40) return 0;
           return Math.max(1, Math.round(words / 250));
         })();
@@ -2046,7 +2086,7 @@
 
       function fillRich(node, value) {
         const text = String(value || "");
-        if (!/[\uE000-\uE003]/.test(text)) {
+        if (!/[\uE000-\uE007]/.test(text)) {
           node.textContent = text;
           return;
         }
@@ -2058,13 +2098,15 @@
           stack[stack.length - 1].appendChild(document.createTextNode(buf));
           buf = "";
         };
+        const open = { "\uE000": "strong", "\uE002": "em", "\uE004": "sub", "\uE006": "sup" };
+        const close = { "\uE001": 1, "\uE003": 1, "\uE005": 1, "\uE007": 1 };
         for (const ch of text) {
-          if (ch === "\uE000" || ch === "\uE002") {
+          if (open[ch]) {
             flush();
-            const el = document.createElement(ch === "\uE000" ? "strong" : "em");
+            const el = document.createElement(open[ch]);
             stack[stack.length - 1].appendChild(el);
             stack.push(el);
-          } else if (ch === "\uE001" || ch === "\uE003") {
+          } else if (close[ch]) {
             flush();
             if (stack.length > 1) stack.pop();
           } else buf += ch;
@@ -2096,7 +2138,7 @@
         const blocks = article.blocks && article.blocks.length ? article.blocks : article.paragraphs || [];
         const sections = [];
         blocks.forEach((block) => {
-          if (!block || !block.heading) return;
+          if (!block || !block.heading || (block.level && block.level > 2)) return;
           const slug = String(block.heading)
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, "-")
@@ -2152,10 +2194,26 @@
           for (const block of blocks) {
             let node;
             if (block && typeof block === "object" && block.heading) {
-              node = document.createElement("h2");
-              const section = sectionIds.shift();
-              if (section) node.id = section.id;
+              const level = Number(block.level) || 2;
+              if (level === 3) {
+                node = document.createElement("p");
+                node.className = "kicker";
+              } else if (level >= 6) {
+                node = document.createElement("p");
+                node.className = "label";
+              } else if (level > 2) {
+                node = document.createElement("h3");
+                if (level >= 5) node.className = "example";
+              } else {
+                node = document.createElement("h2");
+                const section = sectionIds.shift();
+                if (section) node.id = section.id;
+              }
               fillRich(node, block.heading);
+            } else if (block && typeof block === "object" && block.aside) {
+              node = document.createElement("p");
+              node.className = "aside";
+              fillRich(node, block.aside);
             } else if (block && typeof block === "object" && typeof block.poem === "string") {
               node = document.createElement("p");
               node.className = "poem";
@@ -2198,7 +2256,7 @@
 
       function flat(value) {
         return String(value || "")
-          .replace(/[\uE000-\uE003]/g, "")
+          .replace(/[\uE000-\uE007]/g, "")
           .replace(/[\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000]/g, " ")
           .replace(/\s+/g, " ")
           .trim();
@@ -2211,6 +2269,7 @@
           if (typeof block === "string" && block.trim()) parts.push(block);
           else if (block && block.heading) parts.push(String(block.heading));
           else if (block && block.quote) parts.push(String(block.quote));
+          else if (block && block.aside) parts.push(String(block.aside));
           else if (block && typeof block.poem === "string" && block.poem.trim()) parts.push(block.poem);
         }
         return flat(parts.join(" "));

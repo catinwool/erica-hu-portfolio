@@ -327,7 +327,10 @@ function cleanBlocks(value) {
       } else {
         const heading = cleanText(block.heading, 180);
         if (heading) {
-          blocks.push({ heading });
+          const level = Number(block.level);
+          blocks.push(level >= 2 && level <= 6 ? { heading, level } : { heading });
+        } else if (cleanText(block.aside, 5000)) {
+          blocks.push({ aside: cleanText(block.aside, 5000) });
         } else {
           const image = cleanUrl(block.image);
           if (image) blocks.push({ image, alt: cleanText(block.alt, 240) });
@@ -867,7 +870,7 @@ function chromeImage(src, alt) {
   if (/\blogo\b|logotype|wordmark|favicon|apple-touch|site-icon|avatar/.test(name + " " + label)) return true;
   if (/\bicon\b/.test(label) && label.length < 48) return true;
   if (/\/themes\/[^?]+\/assets\//.test(name)) return true;
-  if (/underline|frame-|\/logo|icon|sprite|\/share|plugin|pixel|spacer|badge|opengraph/.test(name)) return true;
+  if (/underline|frame-|\/logo|(^|[/_-])icon([s._-]|$)|sprite|\/share|plugin|pixel|spacer|badge|opengraph/.test(name)) return true;
   return false;
 }
 
@@ -1100,7 +1103,7 @@ const ITALIC_ON = "\uE002";
 const ITALIC_OFF = "\uE003";
 
 function plainOf(value) {
-  return String(value || "").replace(/[\uE000-\uE003]/g, "");
+  return String(value || "").replace(/[\uE000-\uE007]/g, "");
 }
 
 function faceOf(node) {
@@ -1120,7 +1123,21 @@ function richText(node, state) {
   if (node.nodeType !== 1) return "";
   const tag = node.tagName;
   if (tag === "SCRIPT" || tag === "STYLE" || tag === "NOSCRIPT" || tag === "SVG") return "";
-  if (tag === "BR") return " ";
+  if (tag === "SUB" || tag === "SUP") {
+    const open = tag === "SUB" ? "\uE004" : "\uE006";
+    const close = tag === "SUB" ? "\uE005" : "\uE007";
+    let inner = "";
+    for (const child of node.childNodes) inner += richText(child, face);
+    return plainOf(inner).trim() ? open + inner + close : "";
+  }
+  if (tag === "CANVAS" || tag === "BR") return tag === "BR" ? " " : "";
+  const styleAttr = String((node.getAttribute && node.getAttribute("style")) || "");
+  if (/display\s*:\s*none/i.test(styleAttr)) return "";
+  const choice = String((node.getAttribute && node.getAttribute("class")) || "");
+  if (/\bv_(ifElse|plusMinus|switch)\b/.test(choice)) {
+    const branch = [...node.children].find((child) => child.tagName === "SPAN");
+    return branch ? richText(branch, state) : "";
+  }
   const nextFace = faceOf(node);
   const next = { bold: face.bold || nextFace.bold, italic: face.italic || nextFace.italic };
   let out = "";
@@ -1134,28 +1151,38 @@ function richText(node, state) {
 function headingText(value) {
   const raw = String(value || "").replace(/\s+/g, " ").trim();
   const text = plainOf(raw);
-  if (text.length < 2 || text.length > 80) return "";
+  if (text.length < 2 || text.length > 140) return "";
   if (/^_+$/.test(text) || /^fig(?:ure)?\.?\s*\d+/i.test(text)) return "";
   return raw;
 }
 
-function pushText(blocks, paragraphs, value, heading) {
+function pushText(blocks, paragraphs, value, heading, level, minLength) {
   const text = String(value || "").replace(/\s+/g, " ").trim();
   const plain = plainOf(text);
   const marked = text.includes(BOLD_ON) || text.includes(ITALIC_ON);
-  if (plain.length < 2 || (!heading && !marked && plain.length < 20)) return;
+  const min = heading ? 2 : minLength || (marked ? 2 : 20);
+  if (plain.length < min) return;
   if (/^(learn more|subscribe|sign up|share this|advertisement|cookie settings)$/i.test(plain)) return;
   if (heading) {
     const title = headingText(text);
     if (title) {
       const last = blocks[blocks.length - 1];
       if (last && last.heading === title) return;
-      blocks.push({ heading: title });
+      blocks.push({ heading: title, level: level || 2 });
       paragraphs.push(title);
       return;
     }
   }
   const line = text.slice(0, 5000);
+  const boldLine = line.startsWith(BOLD_ON) && line.endsWith(BOLD_OFF) && !line.slice(1, -1).includes(BOLD_ON);
+  if (boldLine && plain.length <= 80) {
+    const title = headingText(plain);
+    if (title) {
+      blocks.push({ heading: title, level: 4 });
+      paragraphs.push(title);
+      return;
+    }
+  }
   if (paragraphs[paragraphs.length - 1] === line) return;
   blocks.push(line);
   paragraphs.push(line);
@@ -1171,7 +1198,7 @@ function pushQuote(blocks, paragraphs, value) {
   const same = (other) => {
     const norm = (item) =>
       String(item || "")
-        .replace(/[\u200b-\u200d\ufeff\u00a0\uE000-\uE003]/g, " ")
+        .replace(/[\u200b-\u200d\ufeff\u00a0\uE000-\uE007]/g, " ")
         .replace(/[“”]/g, '"')
         .replace(/[‘’]/g, "'")
         .replace(/\s+/g, " ")
@@ -1243,6 +1270,26 @@ function listNumber(node) {
   return base + index;
 }
 
+function richUntilBreak(node) {
+  let out = "";
+  for (const child of node.childNodes) {
+    if (child.nodeType === 1 && child.tagName === "BR") break;
+    out += richText(child);
+  }
+  return out;
+}
+
+function inlineContainer(node) {
+  return ![...node.children].some((child) => /^(P|DIV|SECTION|ASIDE|UL|OL|LI|H\d|BLOCKQUOTE|FIGURE|IMG|TABLE|PRE)$/.test(child.tagName));
+}
+
+function pushAside(blocks, paragraphs, value) {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  if (plainOf(text).length < 12) return;
+  blocks.push({ aside: text.slice(0, 5000) });
+  paragraphs.push(text.slice(0, 5000));
+}
+
 function numberListItem(blocks, paragraphs, before, number) {
   if (!number) return;
   const block = blocks[before];
@@ -1257,16 +1304,24 @@ function visitPiece(node, pageUrl, blocks, paragraphs) {
   if (!node || node.nodeType !== 1) return;
   if (blocks.length >= 240 || paragraphs.length >= 200) return;
   const tag = node.tagName;
-  if (tag === "SCRIPT" || tag === "STYLE" || tag === "NOSCRIPT" || tag === "SVG" || tag === "H1") return;
+  const hidden = String(node.getAttribute("style") || "");
+  if (/display\s*:\s*none/i.test(hidden)) return;
+  if (tag === "SCRIPT" || tag === "STYLE" || tag === "NOSCRIPT" || tag === "SVG" || tag === "H1" || tag === "CANVAS") return;
   if (tag === "IMG") return pushImage(blocks, node, pageUrl);
-  if (tag === "H2" || tag === "H3" || tag === "H4") return pushText(blocks, paragraphs, richText(node), true);
+  if (/^H[2-6]$/.test(tag)) return pushText(blocks, paragraphs, richUntilBreak(node), true, Number(tag.slice(1)));
   if (tag === "BLOCKQUOTE") return pushQuote(blocks, paragraphs, richText(node));
+  if ((tag === "DIV" || tag === "ASIDE") && inlineContainer(node)) {
+    const text = richText(node);
+    const cls = String(node.getAttribute("class") || "");
+    if (/sidebar/i.test(cls)) return pushAside(blocks, paragraphs, text);
+    return pushText(blocks, paragraphs, text, false, 0, 12);
+  }
   if (tag === "LI") {
     const before = blocks.length;
     for (const child of node.childNodes) visitPiece(child, pageUrl, blocks, paragraphs);
     if (blocks.length === before) {
       const text = richText(node).replace(/^(?:\d+[\.\)]\s+|[\u2022\-]\s+)/, "");
-      pushText(blocks, paragraphs, text, false);
+      pushText(blocks, paragraphs, text, false, 0, 2);
     }
     numberListItem(blocks, paragraphs, before, listNumber(node));
     return;
@@ -1511,6 +1566,11 @@ async function parsePiece(html, pageUrl) {
     const blocks = poem.map((line) => ({ poem: line }));
     return { title, author, site, paragraphs: poem.map((line) => line || " "), blocks };
   }
+  const authoredRoot = document.querySelector("#everything");
+  const authoredHtml =
+    authoredRoot && authoredRoot.querySelectorAll("h2").length >= 2 && !authoredRoot.querySelector("nav")
+      ? authoredRoot.innerHTML
+      : "";
   let article = null;
   try {
     article = new Readability(document).parse();
@@ -1518,7 +1578,7 @@ async function parsePiece(html, pageUrl) {
     article = null;
   }
   if (!article || !article.content) fail(400, "That page didn't give up a piece.");
-  const piece = blocksFrom(article.content, pageUrl, parseHTML);
+  const piece = blocksFrom(authoredHtml || article.content, pageUrl, parseHTML);
   if (hero && !piece.blocks.some((block) => block && block.image === hero.image)) piece.blocks.unshift(hero);
   const site = cleanText(article.siteName, 120) || siteName || hostnameOf(pageUrl);
   let title = titleFrom(article.title, site);
@@ -1530,7 +1590,9 @@ async function parsePiece(html, pageUrl) {
     if (at >= 0) piece.blocks.splice(at, 1);
     if (piece.paragraphs[0] === title) piece.paragraphs.shift();
   }
-  const author = cleanText(String(article.byline || metaAuthor).replace(/^by\s+/i, ""), 120);
+  let author = cleanText(String(article.byline || metaAuthor).replace(/^by\s+/i, ""), 120);
+  const kicker = piece.blocks.find((block) => block && block.level === 3 && / \/ /.test(block.heading || ""));
+  if (!author && kicker) author = cleanText(kicker.heading.split("/")[0], 120);
   piece.blocks = piece.blocks.filter((block) => !spareImage(block, author));
   const prose = piece.blocks.filter((block) => typeof block === "string" && block.length > 40);
   const proseChars = prose.reduce((sum, block) => sum + block.length, 0);
@@ -1595,7 +1657,7 @@ async function refetchArticle(library, body) {
 
 function flatten(value) {
   return String(value || "")
-    .replace(/[\uE000-\uE003]/g, "")
+    .replace(/[\uE000-\uE007]/g, "")
     .replace(/[\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -1608,6 +1670,7 @@ function passageOf(article) {
     if (typeof block === "string" && flatten(block)) parts.push(block);
     else if (block && block.heading) parts.push(block.heading);
     else if (block && block.quote) parts.push(block.quote);
+    else if (block && block.aside) parts.push(block.aside);
     else if (block && typeof block.poem === "string") parts.push(block.poem);
   }
   return flatten(parts.join(" "));
