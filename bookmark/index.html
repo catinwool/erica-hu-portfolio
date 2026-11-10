@@ -1847,7 +1847,7 @@
         const image = preview
           ? `<img class="piece-preview" src="${esc(preview.image)}" alt="${esc(preview.alt || "")}" referrerpolicy="no-referrer">`
           : "";
-        const byline = article.author ? `<span class="byline">${esc(article.author)}</span>` : "";
+        const byline = article.author ? `<span class="byline">${esc(stripMarks(article.author))}</span>` : "";
         return `<li>${heartButton(article)}<a draggable="true" data-article="${esc(article.id)}" href="${hash(["read", article.id])}">${image}<span class="piece-title">${esc(article.title)}</span><time datetime="${esc(article.savedAt)}">${esc(when(article.savedAt))}</time>${byline}${source ? `<span class="piece-source">${esc(source)}</span>` : ""}${tags ? `<span class="piece-tags">${esc(tags)}</span>` : ""}</a></li>`;
       }
 
@@ -2216,7 +2216,7 @@
           return;
         }
         const bits = sourceBits(article);
-        const byline = article.author ? `<p class="byline">${esc(article.author)}</p>` : "";
+        const byline = article.author ? `<p class="byline">${esc(stripMarks(article.author))}</p>` : "";
         const folderName = article.folder ? folderLabel(article.folder) || "Archive" : "";
         const folderLink = folderName
           ? `<p class="meta"><a href="${hash(["articles", article.folder])}">In ${esc(folderName)}</a></p>`

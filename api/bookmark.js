@@ -1686,7 +1686,7 @@ async function parsePiece(html, pageUrl) {
   }
   let author = cleanText(String(article.byline || metaAuthor).replace(/^by\s+/i, ""), 120);
   const kicker = piece.blocks.find((block) => block && block.level === 3 && / \/ /.test(block.heading || ""));
-  if (!author && kicker) author = cleanText(kicker.heading.split("/")[0], 120);
+  if (!author && kicker) author = cleanText(plainOf(kicker.heading).split("/")[0], 120);
   piece.blocks = piece.blocks.filter((block) => !spareImage(block, author));
   const prose = piece.blocks.filter((block) => typeof block === "string" && block.length > 40);
   const proseChars = prose.reduce((sum, block) => sum + block.length, 0);
