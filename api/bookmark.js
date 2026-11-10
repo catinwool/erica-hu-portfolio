@@ -367,6 +367,7 @@ function cleanArticle(article) {
   const blocks = cleanBlocks(article.blocks);
   if (blocks.length) record.blocks = blocks;
   if (article.sample) record.sample = true;
+  if (article.hearted) record.hearted = true;
   return record;
 }
 
@@ -677,6 +678,7 @@ function shelfArticle(article) {
     tags: article.tags || [],
     sample: Boolean(article.sample),
     minutes: shelfMinutes(article),
+    hearted: Boolean(article.hearted),
     prose:
       (article.paragraphs || []).some((line) => plainOf(line).length > 80) ||
       plainOf((article.paragraphs || []).join("")).replace(/\s+/g, "").length > 200,
@@ -1808,6 +1810,15 @@ function letGo(library, body) {
   return { removedQuote: id };
 }
 
+function heartArticle(library, body) {
+  const article = findArticle(library, body.articleId);
+  const on = Boolean(body.hearted);
+  if (Boolean(article.hearted) === on) return { article, duplicate: true };
+  if (on) article.hearted = true;
+  else delete article.hearted;
+  return { article };
+}
+
 function setTag(library, body, add) {
   const article = findArticle(library, body.articleId);
   const tag = tagsFrom(body.tag)[0];
@@ -1848,6 +1859,7 @@ function apply(library, body) {
   if (kind === "keep") return keepQuote(library, body);
   if (kind === "ink") return tintQuote(library, body);
   if (kind === "let-go") return letGo(library, body);
+  if (kind === "heart") return heartArticle(library, body);
   if (kind === "tag") return setTag(library, body, true);
   if (kind === "untag") return setTag(library, body, false);
   if (kind === "file") return fileArticle(library, body);

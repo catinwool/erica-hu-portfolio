@@ -439,6 +439,27 @@
         padding: 0;
       }
 
+      .pieces li {
+        display: grid;
+        grid-template-columns: 2rem minmax(0, 1fr);
+        align-items: start;
+        border-top: 1px solid var(--rule);
+      }
+
+      .heart:hover,
+      .heart[aria-pressed="true"],
+      .heart[aria-pressed="true"]:hover {
+        color: var(--accent);
+      }
+
+      .heart[aria-pressed="true"] path {
+        fill: currentColor;
+      }
+
+      .pieces .heart {
+        margin-top: 0.95rem;
+      }
+
       .pieces a,
       .quotes a {
         display: grid;
@@ -447,8 +468,16 @@
         row-gap: 0.2rem;
         padding: 1.12rem 0;
         border-top: 1px solid var(--rule);
+      }
+
+      .pieces a,
+      .quotes a {
         text-decoration: none;
         color: inherit;
+      }
+
+      .pieces a {
+        border-top: 0;
       }
 
       .piece-preview {
@@ -1369,6 +1398,7 @@
           mail: `<path ${stroke} d="M4.5 7.5h15v10h-15zM4.5 8l7.5 5.5L19.5 8"/>`,
           again: `<path ${stroke} d="M19 12a7 7 0 1 1-2.1-5M19 4.5V8h-3.5"/>`,
           open: `<path ${stroke} d="M5 12h12M13 7l5 5-5 5"/>`,
+          heart: `<path ${stroke} d="M12 19.2s-6.4-3.9-8.3-7.3C2.2 9.4 3.1 6.4 5.7 5.6c1.7-.5 3.3.2 4.3 1.8 1-1.6 2.6-2.3 4.3-1.8 2.6.8 3.5 3.8 2 6.3-1.9 3.4-8.3 7.3-8.3 7.3z"/>`,
         };
         return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name] || ""}</svg>`;
       }
@@ -1791,6 +1821,21 @@
         );
       }
 
+      function paintHeart(id, on) {
+        const label = on ? "Hearted" : "Heart";
+        document.querySelectorAll(`[data-act="heart"][data-article="${CSS.escape(id)}"]`).forEach((button) => {
+          button.setAttribute("aria-pressed", on ? "true" : "false");
+          button.setAttribute("aria-label", label);
+          button.title = label;
+        });
+      }
+
+      function heartButton(article) {
+        const on = Boolean(article.hearted);
+        const label = on ? "Hearted" : "Heart";
+        return `<button type="button" class="heart icon" data-act="heart" data-article="${esc(article.id)}" aria-pressed="${on ? "true" : "false"}" aria-label="${label}" title="${label}">${icon("heart")}</button>`;
+      }
+
       function pieceRow(article) {
         const bits = [];
         if (article.site) bits.push(article.site);
@@ -1803,7 +1848,7 @@
           ? `<img class="piece-preview" src="${esc(preview.image)}" alt="${esc(preview.alt || "")}" referrerpolicy="no-referrer">`
           : "";
         const byline = article.author ? `<span class="byline">${esc(article.author)}</span>` : "";
-        return `<li><a draggable="true" data-article="${esc(article.id)}" href="${hash(["read", article.id])}">${image}<span class="piece-title">${esc(article.title)}</span><time datetime="${esc(article.savedAt)}">${esc(when(article.savedAt))}</time>${byline}${source ? `<span class="piece-source">${esc(source)}</span>` : ""}${tags ? `<span class="piece-tags">${esc(tags)}</span>` : ""}</a></li>`;
+        return `<li>${heartButton(article)}<a draggable="true" data-article="${esc(article.id)}" href="${hash(["read", article.id])}">${image}<span class="piece-title">${esc(article.title)}</span><time datetime="${esc(article.savedAt)}">${esc(when(article.savedAt))}</time>${byline}${source ? `<span class="piece-source">${esc(source)}</span>` : ""}${tags ? `<span class="piece-tags">${esc(tags)}</span>` : ""}</a></li>`;
       }
 
       function quoteRow(quote, article, gathered) {
@@ -2185,7 +2230,7 @@
         const original = article.url
           ? `<a class="original icon" href="${esc(article.url)}" target="_blank" rel="noreferrer" aria-label="Original" title="Original">${icon("external")}</a>`
           : "";
-        const actions = `<p class="piece-actions">${original}<button type="button" class="remove-piece icon" data-act="remove" aria-label="Remove" title="Remove">${icon("trash")}</button></p>`;
+        const actions = `<p class="piece-actions">${heartButton(article)}${original}<button type="button" class="remove-piece icon" data-act="remove" aria-label="Remove" title="Remove">${icon("trash")}</button></p>`;
         const blocks = article.blocks && article.blocks.length ? article.blocks : article.paragraphs || [];
         const sections = [];
         blocks.forEach((block) => {
@@ -2751,6 +2796,22 @@
             state.step = data.step === "code" ? "code" : "";
             render();
           } catch (error) {
+            say(error.message);
+          }
+          return;
+        }
+        if (act === "heart") {
+          const id = button.dataset.article;
+          const article = articleById(id);
+          const on = !(article && article.hearted);
+          if (article) article.hearted = on;
+          paintHeart(id, on);
+          try {
+            await api({ kind: "heart", articleId: id, hearted: on });
+            state.error = "";
+          } catch (error) {
+            if (article) article.hearted = !on;
+            paintHeart(id, !on);
             say(error.message);
           }
           return;
