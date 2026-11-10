@@ -1395,7 +1395,7 @@ function facebookPost(document) {
   if (!post) return null;
   const lines = [...post.querySelectorAll("p, li")]
     .map((node) => cleanText(node.textContent, 5000))
-    .filter((line) => line.length >= 2);
+    .filter((line) => line.length >= 1);
   if (lines.join("").length < 80) return null;
   const titled = lines.length > 1 && lines[0].length <= 90;
   const title = titled ? lines[0] : cleanText(lines[0], 180);
@@ -1403,6 +1403,67 @@ function facebookPost(document) {
   const author = cleanText((document.querySelector("._50f4") || {}).textContent || "", 120);
   const blocks = body.slice();
   return { title, author, site: "Facebook", paragraphs: body, blocks };
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function facebookLetter(markdown) {
+  let text = String(markdown || "");
+  const cut = text.search(/\nAll reactions:/);
+  if (cut > 0) text = text.slice(0, cut);
+  const authorMatch = text.match(/###\s+\[?\*\*([^*\n\]]{1,80})\*\*/);
+  const author = authorMatch ? cleanText(authorMatch[1], 120) : "";
+  const after = authorMatch ? text.slice(authorMatch.index + authorMatch[0].length) : text;
+  const lines = after
+    .split(/\n+/)
+    .map((line) =>
+      line
+        .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+        .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+        .replace(/^#+\s*/, "")
+        .replace(/\s+/g, " ")
+        .trim()
+    )
+    .filter((line) => {
+      if (line.length < 1) return false;
+      if (/^(log in|forgot account|like|comment|most relevant)$/i.test(line)) return false;
+      if (/^\w+, \w+ \d{1,2}, \d{4}\b/.test(line)) return false;
+      if (/^(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}, \d{4}\b/i.test(line)) return false;
+      if (line === "·") return false;
+      if (/\]\(https?:|__cft__|^https?:\/\/|^\]\(/i.test(line)) return false;
+      return true;
+    });
+  if (lines.join("").length < 80) return null;
+  return { author, lines };
+}
+
+function facebookDocument(letter) {
+  const paras = letter.lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("");
+  return `<!doctype html><html><body><div class="_50f4">${escapeHtml(letter.author)}</div><div data-testid="post_message">${paras}</div></body></html>`;
+}
+
+async function facebookRelay(target) {
+  const res = await fetch("https://r.jina.ai/" + target, {
+    redirect: "follow",
+    signal: AbortSignal.timeout(18000),
+    headers: {
+      accept: "text/plain",
+      "x-return-format": "markdown",
+      "user-agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+    },
+  });
+  const text = await res.text();
+  if (!res.ok) return null;
+  const letter = facebookLetter(text);
+  if (!letter) return null;
+  return { res, html: facebookDocument(letter), url: target };
 }
 
 async function fetchPage(target, timeout = 12000) {
@@ -1498,6 +1559,12 @@ async function readPage(target) {
       }
     } catch {
       /* the public post page can still open */
+    }
+    try {
+      const relayed = await facebookRelay(target);
+      if (relayed) return relayed;
+    } catch {
+      /* a plain copy of the post can still open */
     }
   }
   let page = null;
