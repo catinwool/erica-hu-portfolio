@@ -39,6 +39,7 @@
 
       html {
         hanging-punctuation: first last;
+        overflow-anchor: none;
       }
 
       html,
@@ -1026,6 +1027,9 @@
       .float {
         position: fixed;
         z-index: 4;
+        visibility: hidden;
+        pointer-events: none;
+        overflow-anchor: none;
         border: 1px solid var(--rule);
         background: #fff;
         font-style: italic;
@@ -1035,11 +1039,12 @@
         box-shadow: 0 8px 22px rgba(36, 28, 20, 0.09);
       }
 
-      .float[hidden] {
-        display: none;
+      .float.shown {
+        visibility: visible;
+        pointer-events: auto;
       }
 
-      .trash:not([hidden]) {
+      .trash {
         display: grid;
         place-items: center;
         width: 2rem;
@@ -1059,7 +1064,7 @@
         color: var(--accent);
       }
 
-      .pens:not([hidden]) {
+      .pens {
         display: flex;
         align-items: center;
         gap: 0.38rem;
@@ -1281,7 +1286,7 @@
         <main id="main"></main>
       </div>
     </div>
-    <div id="keep" class="float pens" role="group" aria-label="Highlight" hidden>
+    <div id="keep" class="float pens" role="group" aria-label="Highlight">
       <button type="button" data-ink="yellow" aria-label="Yellow"></button>
       <button type="button" data-ink="green" aria-label="Green"></button>
       <button type="button" data-ink="orange" aria-label="Orange"></button>
@@ -1289,7 +1294,7 @@
       <button type="button" data-ink="lilac" aria-label="Lilac"></button>
       <button type="button" data-ink="blue" aria-label="Blue"></button>
     </div>
-    <button type="button" id="letgo" class="float trash" hidden aria-label="Let this go">
+    <button type="button" id="letgo" class="float trash" aria-label="Let this go">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path
           d="M5 7h14M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7M7.2 7l.7 12.1a1.2 1.2 0 0 0 1.2 1.1h5.8a1.2 1.2 0 0 0 1.2-1.1L16.8 7M10 11v5M14 11v5"
@@ -1574,8 +1579,8 @@
       }
 
       function hideFloats() {
-        keep.hidden = true;
-        letgo.hidden = true;
+        keep.classList.remove("shown");
+        letgo.classList.remove("shown");
         keepText = "";
         delete keep.dataset.quote;
         keep.querySelectorAll("[aria-pressed]").forEach((pen) => pen.removeAttribute("aria-pressed"));
@@ -2878,6 +2883,8 @@
         letgo.style.left = left + keep.offsetWidth + gap + "px";
         letgo.style.top = top + "px";
         letgo.style.transform = transform;
+        keep.classList.add("shown");
+        letgo.classList.add("shown");
       }
 
       function showNote(mark) {
@@ -2893,8 +2900,6 @@
           if (pen.dataset.ink === ink) pen.setAttribute("aria-pressed", "true");
           else pen.removeAttribute("aria-pressed");
         });
-        keep.hidden = false;
-        letgo.hidden = false;
         placePair(rect);
       }
 
@@ -2905,10 +2910,11 @@
         if (rect.top > 56) {
           button.style.top = rect.top + "px";
           button.style.transform = "translate(0, calc(-100% - 8px))";
-          return;
+        } else {
+          button.style.top = rect.bottom + 8 + "px";
+          button.style.transform = "none";
         }
-        button.style.top = rect.bottom + 8 + "px";
-        button.style.transform = "none";
+        button.classList.add("shown");
       }
 
       function considerSelection() {
@@ -2919,23 +2925,22 @@
         const found = selectedLine();
         if (!found) {
           if (!keep.dataset.quote) {
-            keep.hidden = true;
+            keep.classList.remove("shown");
             keepText = "";
           }
           return;
         }
         delete keep.dataset.quote;
-        letgo.hidden = true;
+        letgo.classList.remove("shown");
         keep.querySelectorAll("[aria-pressed]").forEach((pen) => pen.removeAttribute("aria-pressed"));
         keepText = found.text;
-        keep.hidden = false;
         placeFloat(keep, found.rect);
       }
 
       let penDown = false;
       let penPress = null;
       let penHandled = false;
-      let selectionFrame = 0;
+      let choosing = false;
 
       function holdSelection(event) {
         penDown = true;
@@ -3017,24 +3022,23 @@
         if (pen) chooseInk(pen.dataset.ink);
       });
       letgo.addEventListener("click", () => releaseLine());
-      function scheduleSelection() {
-        if (selectionFrame) return;
-        selectionFrame = requestAnimationFrame(() => {
-          selectionFrame = 0;
-          considerSelection();
-        });
-      }
-
-      document.addEventListener("pointerup", scheduleSelection);
+      document.addEventListener("pointerdown", (event) => {
+        if (event.target.closest && event.target.closest("#keep, #letgo")) return;
+        choosing = true;
+      });
+      document.addEventListener("pointerup", () => {
+        choosing = false;
+        considerSelection();
+      });
       document.addEventListener("keyup", (event) => {
-        if (event.key === "Shift" || event.key.startsWith("Arrow")) scheduleSelection();
+        if (event.key === "Shift" || event.key.startsWith("Arrow")) considerSelection();
       });
       document.addEventListener("selectionchange", () => {
-        if (penDown || state.view !== "read") return;
-        scheduleSelection();
+        if (penDown || choosing || state.view !== "read") return;
+        considerSelection();
       });
       window.addEventListener("scroll", () => {
-        if (keep.hidden) return;
+        if (!keep.classList.contains("shown")) return;
         if (keep.dataset.quote) {
           const mark = document.querySelector(`#body mark[data-quote="${CSS.escape(keep.dataset.quote)}"]`);
           const rect = mark && (mark.getClientRects()[0] || mark.getBoundingClientRect());
