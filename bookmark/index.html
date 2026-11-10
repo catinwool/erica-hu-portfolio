@@ -833,6 +833,13 @@
         font-style: italic;
       }
 
+      .body a {
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.16em;
+        text-decoration-color: var(--accent);
+      }
+
       .body figure {
         margin: 0.2rem 0 1.45rem;
       }
@@ -1704,7 +1711,7 @@
       function readingTime(article) {
         const known = Number(article.minutes);
         const minutes = known || (() => {
-          const words = (article.paragraphs || []).join(" ").replace(/[\uE000-\uE007]/g, "").trim().split(/\s+/).filter(Boolean).length;
+          const words = stripMarks((article.paragraphs || []).join(" ")).trim().split(/\s+/).filter(Boolean).length;
           if (words < 40) return 0;
           return Math.max(1, Math.round(words / 250));
         })();
@@ -2084,9 +2091,36 @@
         main.innerHTML = `${rank}<ul class="books">${list(live)}${list(loose)}</ul>${archiveBlock}`;
       }
 
+      function stripMarks(value) {
+        return String(value || "")
+          .replace(/\uE008[^\uE009]*\uE009/g, "")
+          .replace(/[\uE000-\uE00A]/g, "");
+      }
+
+      function appendLinked(parent, value) {
+        const re = /https?:\/\/[^\s<>"']+/g;
+        let last = 0;
+        let match;
+        while ((match = re.exec(value))) {
+          let href = match[0].replace(/[),.;:!?]+$/g, "");
+          if (!href) continue;
+          const start = match.index;
+          const end = start + href.length;
+          if (start > last) parent.appendChild(document.createTextNode(value.slice(last, start)));
+          const link = document.createElement("a");
+          link.href = href;
+          link.target = "_blank";
+          link.rel = "noreferrer";
+          link.textContent = href;
+          parent.appendChild(link);
+          last = end;
+        }
+        if (last < value.length) parent.appendChild(document.createTextNode(value.slice(last)));
+      }
+
       function fillRich(node, value) {
         const text = String(value || "");
-        if (!/[\uE000-\uE007]/.test(text)) {
+        if (!/[\uE000-\uE00A]/.test(text) && !/https?:\/\//.test(text)) {
           node.textContent = text;
           return;
         }
@@ -2095,12 +2129,29 @@
         let buf = "";
         const flush = () => {
           if (!buf) return;
-          stack[stack.length - 1].appendChild(document.createTextNode(buf));
+          appendLinked(stack[stack.length - 1], buf);
           buf = "";
         };
         const open = { "\uE000": "strong", "\uE002": "em", "\uE004": "sub", "\uE006": "sup" };
-        const close = { "\uE001": 1, "\uE003": 1, "\uE005": 1, "\uE007": 1 };
-        for (const ch of text) {
+        const close = { "\uE001": 1, "\uE003": 1, "\uE005": 1, "\uE007": 1, "\uE00A": 1 };
+        for (let i = 0; i < text.length; i++) {
+          const ch = text[i];
+          if (ch === "\uE008") {
+            flush();
+            const mid = text.indexOf("\uE009", i + 1);
+            if (mid < 0) continue;
+            const href = text.slice(i + 1, mid);
+            if (/^https?:\/\//i.test(href)) {
+              const link = document.createElement("a");
+              link.href = href;
+              link.target = "_blank";
+              link.rel = "noreferrer";
+              stack[stack.length - 1].appendChild(link);
+              stack.push(link);
+            }
+            i = mid;
+            continue;
+          }
           if (open[ch]) {
             flush();
             const el = document.createElement(open[ch]);
@@ -2139,12 +2190,13 @@
         const sections = [];
         blocks.forEach((block) => {
           if (!block || !block.heading || (block.level && block.level > 2)) return;
-          const slug = String(block.heading)
+          const heading = stripMarks(block.heading);
+          const slug = heading
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/^-|-$/g, "")
             .slice(0, 40);
-          sections.push({ heading: block.heading, id: `section-${sections.length + 1}-${slug || "part"}` });
+          sections.push({ heading, id: `section-${sections.length + 1}-${slug || "part"}` });
         });
         const contents =
           sections.length > 1
@@ -2255,8 +2307,7 @@
       }
 
       function flat(value) {
-        return String(value || "")
-          .replace(/[\uE000-\uE007]/g, "")
+        return stripMarks(value)
           .replace(/[\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000]/g, " ")
           .replace(/\s+/g, " ")
           .trim();

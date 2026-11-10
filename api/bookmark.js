@@ -1103,7 +1103,9 @@ const ITALIC_ON = "\uE002";
 const ITALIC_OFF = "\uE003";
 
 function plainOf(value) {
-  return String(value || "").replace(/[\uE000-\uE007]/g, "");
+  return String(value || "")
+    .replace(/\uE008[^\uE009]*\uE009/g, "")
+    .replace(/[\uE000-\uE00A]/g, "");
 }
 
 function faceOf(node) {
@@ -1116,13 +1118,35 @@ function faceOf(node) {
   };
 }
 
+function linkHref(node, pageUrl) {
+  const raw = node.getAttribute && node.getAttribute("href");
+  if (!raw || raw.startsWith("#") || /^(javascript:|mailto:|tel:)/i.test(raw)) return "";
+  let href = "";
+  try {
+    href = new URL(raw, pageUrl || undefined).href;
+  } catch {
+    return "";
+  }
+  if (!/^https?:\/\//i.test(href)) return "";
+  if (/[\uE000-\uE00F]/.test(href)) return "";
+  if (/sharer\.php|\/share\?|twitter\.com\/intent|x\.com\/intent|linkedin\.com\/share|pinterest\.com\/pin|reddit\.com\/submit|addtoany|sharethis/i.test(href)) return "";
+  return href.slice(0, 500);
+}
+
 function richText(node, state) {
-  const face = state || { bold: false, italic: false };
+  const face = state || { bold: false, italic: false, pageUrl: "" };
   if (!node) return "";
   if (node.nodeType === 3) return node.nodeValue || "";
   if (node.nodeType !== 1) return "";
   const tag = node.tagName;
   if (tag === "SCRIPT" || tag === "STYLE" || tag === "NOSCRIPT" || tag === "SVG") return "";
+  if (tag === "A") {
+    let inner = "";
+    for (const child of node.childNodes) inner += richText(child, face);
+    const href = linkHref(node, face.pageUrl);
+    if (!href || !plainOf(inner).trim()) return inner;
+    return "\uE008" + href + "\uE009" + inner + "\uE00A";
+  }
   if (tag === "SUB" || tag === "SUP") {
     const open = tag === "SUB" ? "\uE004" : "\uE006";
     const close = tag === "SUB" ? "\uE005" : "\uE007";
@@ -1139,7 +1163,7 @@ function richText(node, state) {
     return branch ? richText(branch, state) : "";
   }
   const nextFace = faceOf(node);
-  const next = { bold: face.bold || nextFace.bold, italic: face.italic || nextFace.italic };
+  const next = { bold: face.bold || nextFace.bold, italic: face.italic || nextFace.italic, pageUrl: face.pageUrl };
   let out = "";
   for (const child of node.childNodes) out += richText(child, next);
   if (!plainOf(out).trim()) return out;
@@ -1198,7 +1222,8 @@ function pushQuote(blocks, paragraphs, value) {
   const same = (other) => {
     const norm = (item) =>
       String(item || "")
-        .replace(/[\u200b-\u200d\ufeff\u00a0\uE000-\uE007]/g, " ")
+        .replace(/\uE008[^\uE009]*\uE009/g, "")
+        .replace(/[\u200b-\u200d\ufeff\u00a0\uE000-\uE00A]/g, " ")
         .replace(/[“”]/g, '"')
         .replace(/[‘’]/g, "'")
         .replace(/\s+/g, " ")
@@ -1232,7 +1257,7 @@ function visitMixed(node, pageUrl, blocks, paragraphs) {
   for (const child of node.childNodes) {
     if (child.nodeType === 1 && child.tagName === "BLOCKQUOTE") {
       flush();
-      pushQuote(blocks, paragraphs, richText(child));
+      pushQuote(blocks, paragraphs, richText(child, { pageUrl }));
       continue;
     }
     if (child.nodeType === 1 && child.tagName === "BR") {
@@ -1244,7 +1269,7 @@ function visitMixed(node, pageUrl, blocks, paragraphs) {
       visitMixed(child, pageUrl, blocks, paragraphs);
       continue;
     }
-    buffer += richText(child);
+    buffer += richText(child, { pageUrl });
   }
   flush();
 }
@@ -1270,11 +1295,11 @@ function listNumber(node) {
   return base + index;
 }
 
-function richUntilBreak(node) {
+function richUntilBreak(node, pageUrl) {
   let out = "";
   for (const child of node.childNodes) {
     if (child.nodeType === 1 && child.tagName === "BR") break;
-    out += richText(child);
+    out += richText(child, { pageUrl });
   }
   return out;
 }
@@ -1308,10 +1333,10 @@ function visitPiece(node, pageUrl, blocks, paragraphs) {
   if (/display\s*:\s*none/i.test(hidden)) return;
   if (tag === "SCRIPT" || tag === "STYLE" || tag === "NOSCRIPT" || tag === "SVG" || tag === "H1" || tag === "CANVAS") return;
   if (tag === "IMG") return pushImage(blocks, node, pageUrl);
-  if (/^H[2-6]$/.test(tag)) return pushText(blocks, paragraphs, richUntilBreak(node), true, Number(tag.slice(1)));
-  if (tag === "BLOCKQUOTE") return pushQuote(blocks, paragraphs, richText(node));
+  if (/^H[2-6]$/.test(tag)) return pushText(blocks, paragraphs, richUntilBreak(node, pageUrl), true, Number(tag.slice(1)));
+  if (tag === "BLOCKQUOTE") return pushQuote(blocks, paragraphs, richText(node, { pageUrl }));
   if ((tag === "DIV" || tag === "ASIDE") && inlineContainer(node)) {
-    const text = richText(node);
+    const text = richText(node, { pageUrl });
     const cls = String(node.getAttribute("class") || "");
     if (/sidebar/i.test(cls)) return pushAside(blocks, paragraphs, text);
     return pushText(blocks, paragraphs, text, false, 0, 12);
@@ -1320,7 +1345,7 @@ function visitPiece(node, pageUrl, blocks, paragraphs) {
     const before = blocks.length;
     for (const child of node.childNodes) visitPiece(child, pageUrl, blocks, paragraphs);
     if (blocks.length === before) {
-      const text = richText(node).replace(/^(?:\d+[\.\)]\s+|[\u2022\-]\s+)/, "");
+      const text = richText(node, { pageUrl }).replace(/^(?:\d+[\.\)]\s+|[\u2022\-]\s+)/, "");
       pushText(blocks, paragraphs, text, false, 0, 2);
     }
     numberListItem(blocks, paragraphs, before, listNumber(node));
@@ -1334,7 +1359,7 @@ function visitPiece(node, pageUrl, blocks, paragraphs) {
       for (const child of node.childNodes) visitPiece(child, pageUrl, blocks, paragraphs);
       return;
     }
-    return pushText(blocks, paragraphs, richText(node), false);
+    return pushText(blocks, paragraphs, richText(node, { pageUrl }), false);
   }
   for (const child of node.childNodes) visitPiece(child, pageUrl, blocks, paragraphs);
 }
@@ -1724,7 +1749,8 @@ async function refetchArticle(library, body) {
 
 function flatten(value) {
   return String(value || "")
-    .replace(/[\uE000-\uE007]/g, "")
+    .replace(/\uE008[^\uE009]*\uE009/g, "")
+    .replace(/[\uE000-\uE00A]/g, "")
     .replace(/[\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
