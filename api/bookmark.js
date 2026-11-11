@@ -1738,9 +1738,18 @@ async function saveArticle(library, body) {
 
 async function refetchArticle(library, body) {
   const article = findArticle(library, body.articleId);
-  if (!article.url) fail(400, "That piece has no link to fetch.");
-  const page = await readPage(article.url);
-  const parsed = await parsePiece(page.html, article.url);
+  const supplied = String((body && body.html) || "");
+  let html = "";
+  let pageUrl = article.url;
+  if (supplied.length > 800) {
+    html = supplied.slice(0, 1400000);
+  } else {
+    if (!article.url) fail(400, "That piece has no link to fetch.");
+    const page = await readPage(article.url);
+    html = page.html;
+    pageUrl = page.url || article.url;
+  }
+  const parsed = await parsePiece(html, pageUrl);
   if (parsed.title) article.title = parsed.title;
   if (parsed.author) article.author = parsed.author;
   if (parsed.site) article.site = parsed.site;
