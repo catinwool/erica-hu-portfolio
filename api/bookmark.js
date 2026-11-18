@@ -1706,11 +1706,19 @@ async function saveArticle(library, body) {
   if (!openable(parsedUrl)) fail(400, "That link doesn't open.");
   const existing = library.articles.find((article) => article.url === url);
   if (existing) return { article: existing, duplicate: true };
-  const page = await readPage(url);
-  const finalUrl = cleanUrl(page.url) || url;
+  const supplied = String((body && body.html) || "");
+  let html = "";
+  let finalUrl = url;
+  if (supplied.length > 800) {
+    html = supplied.slice(0, 1400000);
+  } else {
+    const page = await readPage(url);
+    html = page.html;
+    finalUrl = cleanUrl(page.url) || url;
+  }
   const again = library.articles.find((article) => article.url === finalUrl);
   if (again) return { article: again, duplicate: true };
-  const parsed = await parsePiece(page.html, finalUrl);
+  const parsed = await parsePiece(html, finalUrl);
   const article = {
     id: uid(),
     title: parsed.title,
