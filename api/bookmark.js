@@ -915,15 +915,30 @@ function dropSavedMarks(library) {
 }
 
 function sourceCandidates(value) {
+  // A srcset entry is a URL (a run without spaces, which may itself hold commas,
+  // as Substack's image URLs do) then an optional descriptor up to the next comma.
   const found = [];
-  for (const part of String(value || "").split(",")) {
-    const bits = part.trim().split(/\s+/);
-    if (!bits[0] || bits[0].startsWith("data:")) continue;
-    const desc = bits[1] || "";
+  const text = String(value || "");
+  let at = 0;
+  while (at < text.length) {
+    while (at < text.length && /[\s,]/.test(text[at])) at++;
+    let end = at;
+    while (end < text.length && !/\s/.test(text[end])) end++;
+    let url = text.slice(at, end);
+    let desc = "";
+    at = end;
+    if (/,+$/.test(url)) {
+      url = url.replace(/,+$/, "");
+    } else {
+      const comma = text.indexOf(",", at);
+      desc = text.slice(at, comma < 0 ? text.length : comma).trim();
+      at = comma < 0 ? text.length : comma + 1;
+    }
+    if (!url || url.startsWith("data:")) continue;
     let width = 0;
-    if (/^\d+w$/i.test(desc)) width = Number(desc);
+    if (/^\d+w$/i.test(desc)) width = parseInt(desc, 10);
     else if (/^(\d+(?:\.\d+)?)x$/i.test(desc)) width = Math.round(parseFloat(desc) * 800);
-    found.push({ url: bits[0], width });
+    found.push({ url, width });
   }
   return found;
 }
@@ -1307,7 +1322,10 @@ function richUntilBreak(node, pageUrl) {
 }
 
 function inlineContainer(node) {
-  return ![...node.children].some((child) => /^(P|DIV|SECTION|ASIDE|UL|OL|LI|H\d|BLOCKQUOTE|FIGURE|IMG|TABLE|PRE)$/.test(child.tagName));
+  if ([...node.children].some((child) => /^(P|DIV|SECTION|ARTICLE|MAIN|HEADER|FOOTER|ASIDE|UL|OL|LI|H\d|BLOCKQUOTE|FIGURE|PICTURE|IMG|TABLE|PRE)$/.test(child.tagName))) return false;
+  // A wrapper that holds only a picture (Substack's image inset) has no words to read.
+  if (node.querySelector("img") && !String(node.textContent || "").trim()) return false;
+  return true;
 }
 
 function pushAside(blocks, paragraphs, value) {
@@ -1640,6 +1658,10 @@ async function parsePiece(html, pageUrl) {
     fail(400, "That page didn't give up a piece.");
   }
   const hero = firstImage(document, pageUrl);
+  // Substack's section headings carry a "header-anchor" class, which Readability
+  // takes for page chrome and drops; keep the heading, lose the anchor widget.
+  for (const node of document.querySelectorAll(".header-anchor-parent")) node.remove();
+  for (const node of document.querySelectorAll(".header-anchor-post")) node.removeAttribute("class");
   for (const node of document.querySelectorAll(".quote, .pullquote, .wp-block-quote")) {
     if (node.tagName === "BLOCKQUOTE") continue;
     const quote = document.createElement("blockquote");
