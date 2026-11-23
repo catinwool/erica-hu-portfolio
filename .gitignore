@@ -5,3 +5,4 @@ node_modules
 bookmark/library.json
 bookmark/instapaper.json
 .env*
+bookmark-extension/*.zip

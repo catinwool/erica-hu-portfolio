@@ -1,0 +1,91 @@
+:root {
+  --paper: #ffffff;
+  --ink: #241c14;
+  --accent: #8f3b28;
+  --mute: #7a6f64;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 14px/1.45 "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+}
+
+main {
+  width: 260px;
+  padding: 16px 16px 14px;
+}
+
+.brand {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.status {
+  margin: 0 0 14px;
+  color: var(--mute);
+  min-height: 2.9em;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+button,
+a.ghost {
+  appearance: none;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  padding: 7px 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+button.primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+a.ghost {
+  border-color: transparent;
+  color: var(--mute);
+  padding-left: 4px;
+}
+
+a.ghost:hover {
+  color: var(--accent);
+}
+
+.status.ok {
+  color: var(--accent);
+}
+
+.status.err {
+  color: var(--ink);
+}
