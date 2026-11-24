@@ -1,0 +1,30 @@
+{
+  "name": "Bookmark",
+  "short_name": "Bookmark",
+  "description": "Articles saved, and the lines kept from them.",
+  "start_url": "/bookmark/",
+  "scope": "/bookmark/",
+  "display": "standalone",
+  "background_color": "#f7f1fc",
+  "theme_color": "#9a7bb8",
+  "icons": [
+    {
+      "src": "/bookmark/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/bookmark/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/bookmark/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

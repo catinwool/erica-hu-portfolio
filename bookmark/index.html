@@ -2,15 +2,22 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Bookmark</title>
     <meta name="description" content="Articles saved, and the lines kept from them." />
     <meta name="robots" content="noindex, nofollow" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#9a7bb8" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Bookmark" />
+    <link rel="manifest" href="/bookmark/manifest.webmanifest" />
+    <link rel="icon" href="/bookmark/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/bookmark/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500&family=Literata:ital,opsz,wght@0,7..72,200..720;1,7..72,200..720&family=Source+Sans+3:ital,wght@0,400;0,560;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..720;1,7..72,200..720&family=Paytone+One&family=Source+Sans+3:ital,wght@0,400;0,560;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=swap"
       rel="stylesheet"
     />
     <style>
@@ -20,7 +27,8 @@
         --ink-soft: rgba(36, 28, 20, 0.68);
         --ink-faint: rgba(36, 28, 20, 0.42);
         --rule: rgba(36, 28, 20, 0.16);
-        --accent: #8f3b28;
+        --accent: #6f4f96;
+        --brand: #6f4f96;
         --mark: #e6d3b8;
         --pen-yellow: #ffe56a;
         --pen-green: #c6ef9a;
@@ -29,6 +37,7 @@
         --pen-lilac: #e3d0f6;
         --pen-blue: #c5e0fb;
         --type: "Literata", Georgia, "Palatino Linotype", Palatino, "Times New Roman", serif;
+        --menu-width: 12.25rem;
       }
 
       *,
@@ -99,7 +108,7 @@
 
       .shelf {
         display: grid;
-        grid-template-columns: 12.25rem minmax(0, 1fr);
+        grid-template-columns: var(--menu-width) minmax(0, 1fr);
         min-height: 100vh;
       }
 
@@ -116,6 +125,26 @@
         font-size: 0.98rem;
         font-weight: 400;
         line-height: 1.3;
+      }
+
+      .menu-resize {
+        position: absolute;
+        top: 0;
+        right: -4px;
+        z-index: 4;
+        width: 8px;
+        height: 100%;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        cursor: col-resize;
+        touch-action: none;
+      }
+
+      .menu-resize:hover,
+      .menu-resize:focus-visible,
+      body.menu-resizing .menu-resize {
+        background: linear-gradient(to right, transparent 3px, var(--accent) 3px, var(--accent) 4px, transparent 4px);
       }
 
       .icon {
@@ -153,21 +182,26 @@
 
       .name,
       .stack h1.brand {
-        font-family: Fraunces, "Iowan Old Style", Palatino, Georgia, serif;
-        font-style: italic;
-        font-weight: 500;
-        font-optical-sizing: auto;
-        letter-spacing: -0.03em;
+        font-family: "Paytone One", "Avenir Next", "Segoe UI", sans-serif;
+        font-style: normal;
+        font-weight: 400;
+        letter-spacing: -0.02em;
+        color: var(--brand);
       }
 
       .name {
-        font-size: 1.55rem;
+        font-size: 1.42rem;
         line-height: 1;
         text-decoration: none;
       }
 
+      .stack h1.brand {
+        font-size: clamp(2.1rem, 5vw, 2.6rem);
+        letter-spacing: -0.025em;
+      }
+
       .name:hover {
-        color: var(--accent);
+        color: #5a3d7c;
       }
 
       .menu-bar {
@@ -294,16 +328,49 @@
 
       .menu-views a.icon[aria-current="page"],
       .menu-views a.icon:hover,
-      .menu-tags a:hover,
-      .menu-tags a.folder-drop {
+      .menu-tags a:hover {
         color: var(--accent);
+      }
+
+      body.is-filing .menu-tags a[data-folder] {
+        border-radius: 0.35rem;
+        margin-left: -0.45rem;
+        margin-right: -0.2rem;
+        padding-left: 0.45rem;
+        padding-right: 0.45rem;
+        transition: background 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+      }
+
+      body.is-filing .menu-tags a[data-folder]:not(.folder-drop) {
+        color: var(--ink-faint);
+      }
+
+      .menu-tags a.folder-drop,
+      body.is-filing .menu-tags a.folder-drop {
+        color: var(--accent);
+        background: color-mix(in srgb, var(--accent) 12%, transparent);
+        box-shadow: inset 3px 0 0 var(--accent);
+        font-weight: 560;
       }
 
       .menu-tags {
         margin-top: 1.7rem;
-        overflow: auto;
+        overflow-x: hidden;
+        overflow-y: auto;
         min-height: 0;
         padding-bottom: 0.4rem;
+        scrollbar-width: none;
+      }
+
+      .menu-tags::-webkit-scrollbar {
+        display: none;
+      }
+
+      .menu-tags a,
+      .folder-new input {
+        min-width: 0;
+        max-width: 100%;
+        overflow-wrap: anywhere;
       }
 
       .menu-views[hidden],
@@ -345,6 +412,10 @@
         display: flex;
         gap: 0;
         margin: 0 -0.35rem 0 0;
+      }
+
+      .folder-system {
+        margin: 0 0 1.15rem;
       }
 
       .folder-group {
@@ -393,6 +464,35 @@
         display: block;
         font-style: normal;
         padding: 0.16rem 0;
+      }
+
+      .folder-new {
+        margin: 0.85rem 0 0;
+      }
+
+      .folder-new input {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        border: 0;
+        border-bottom: 1px solid transparent;
+        border-radius: 0;
+        background: transparent;
+        padding: 0.28rem 0;
+        font-family: "Source Sans 3", "Avenir Next", "Segoe UI", sans-serif;
+        font-size: 0.95rem;
+        font-style: italic;
+        color: var(--ink);
+      }
+
+      .folder-new input:focus {
+        border-bottom-color: var(--rule);
+        outline: none;
+      }
+
+      .folder-new input::placeholder {
+        color: var(--ink-faint);
+        font-style: italic;
       }
 
       .column {
@@ -505,7 +605,42 @@
 
       .pieces a.dragging,
       .reader h1.dragging {
-        opacity: 0.45;
+        opacity: 0.38;
+      }
+
+      .drag-chip {
+        position: fixed;
+        top: -1200px;
+        left: 0;
+        z-index: 40;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        max-width: 14rem;
+        padding: 0.55rem 0.75rem 0.55rem 0.6rem;
+        border: 1px solid var(--rule);
+        border-radius: 0.55rem;
+        background: var(--paper);
+        color: var(--ink);
+        box-shadow: 0 10px 28px rgba(48, 36, 24, 0.14);
+        pointer-events: none;
+      }
+
+      .drag-chip svg {
+        flex: 0 0 auto;
+        width: 1.35rem;
+        height: 1.35rem;
+        color: var(--accent);
+      }
+
+      .drag-chip span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.95rem;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        line-height: 1.2;
       }
 
       .pieces time,
@@ -593,7 +728,7 @@
         height: 4.15rem;
         padding: 2px;
         border-radius: 50%;
-        background: conic-gradient(from 200deg, #8f3b28, #c98455, #e6d3b8, #8f3b28);
+        background: conic-gradient(from 200deg, #6f4f96, #c4a6e0, #efe4f8, #6f4f96);
       }
 
       .story-face {
@@ -638,6 +773,10 @@
       }
 
       .continue a:hover .story-title {
+        color: var(--accent);
+      }
+
+      .continue a:active .story-title {
         color: var(--accent);
       }
 
@@ -1188,6 +1327,34 @@
       }
 
       @media (max-width: 760px) {
+        .float {
+          z-index: 6;
+          padding: 0.42rem 0.62rem;
+          box-shadow: 0 10px 28px rgba(36, 28, 20, 0.14);
+        }
+
+        .pens {
+          gap: 0.62rem;
+          padding: 0.55rem 0.72rem;
+        }
+
+        .pens button {
+          width: 2.45rem;
+          height: 2.45rem;
+          border-width: 1.5px;
+          touch-action: manipulation;
+        }
+
+        .trash {
+          width: 2.75rem;
+          height: 2.75rem;
+        }
+
+        .trash svg {
+          width: 1.15rem;
+          height: 1.15rem;
+        }
+
         .shelf {
           display: block;
         }
@@ -1195,19 +1362,30 @@
         .menu {
           position: sticky;
           z-index: 3;
+          top: 0;
           height: auto;
-          padding: 0.95rem 1rem 0.8rem;
+          padding: calc(0.95rem + env(safe-area-inset-top, 0px)) 1rem 0.8rem;
           border-right: 0;
           border-bottom: 1px solid var(--rule);
           background: var(--paper);
+          transition: transform 0.28s ease;
+          will-change: transform;
         }
 
-        .search {
-          margin-top: 0.75rem;
+        .menu.menu-away:not(.folders-open) {
+          transform: translateY(calc(-100% - 1px));
+          pointer-events: none;
         }
 
+        @media (prefers-reduced-motion: reduce) {
+          .menu {
+            transition: none;
+          }
+        }
+
+        .search,
         .menu-views {
-          margin-top: 0.45rem;
+          display: none;
         }
 
         .menu-toggle:not([hidden]) {
@@ -1222,10 +1400,28 @@
           display: none;
         }
 
+        .menu-views a[data-view="articles"] {
+          display: none;
+        }
+
+        .menu.folders-open .search {
+          display: block;
+          margin-top: 0.85rem;
+        }
+
+        .menu.folders-open .menu-views:not([hidden]) {
+          display: flex;
+          margin-top: 0.45rem;
+        }
+
         .menu.folders-open .menu-lock:not([hidden]) {
           display: grid;
           margin-top: 0.7rem;
           margin-left: -0.45rem;
+        }
+
+        .menu-resize {
+          display: none;
         }
 
         .menu.folders-open .menu-tags:not([hidden]) {
@@ -1237,7 +1433,13 @@
           margin-top: 0.85rem;
           padding: 0.75rem 0.7rem 0 0;
           border-top: 1px solid var(--rule);
-          overflow: auto;
+          overflow-x: hidden;
+          overflow-y: auto;
+          scrollbar-width: none;
+        }
+
+        .menu.folders-open .menu-tags:not([hidden])::-webkit-scrollbar {
+          display: none;
         }
 
         .menu.folders-open .menu-tags a {
@@ -1322,6 +1524,35 @@
           margin-top: 1.35rem;
         }
 
+        .continue {
+          margin: 0 -0.15rem 1.35rem;
+        }
+
+        .continue ul {
+          gap: 0.95rem;
+          margin-top: 0.55rem;
+          padding: 0.2rem 0.15rem 0.45rem;
+          scroll-snap-type: x proximity;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .continue a {
+          width: 5.15rem;
+          flex: 0 0 auto;
+          scroll-snap-align: start;
+        }
+
+        .story {
+          width: 4.55rem;
+          height: 4.55rem;
+        }
+
+        .story-title {
+          width: 5.15rem;
+          margin-top: 0.45rem;
+          font-size: 0.78rem;
+        }
+
         .piece-title {
           font-size: 1.42rem;
           line-height: 1.28;
@@ -1338,9 +1569,9 @@
       <aside class="menu">
         <div class="menu-bar">
           <a class="name" href="#articles">Bookmark</a>
-          <button type="button" id="folders" class="menu-toggle" aria-expanded="false" aria-controls="tags" aria-label="Folders" hidden>
+          <button type="button" id="folders" class="menu-toggle" aria-expanded="false" aria-controls="tags" aria-label="Menu" hidden>
             <span class="menu-toggle-icon" aria-hidden="true"></span>
-            <span class="menu-toggle-label">Folders</span>
+            <span class="menu-toggle-label">Menu</span>
           </button>
         </div>
         <form class="search" role="search">
@@ -1357,6 +1588,7 @@
         </nav>
         <nav class="menu-tags" id="tags" aria-label="Folders" hidden></nav>
         <button type="button" id="lock" class="menu-lock icon" hidden aria-label="Lock" title="Lock"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 11V8.2a4 4 0 0 1 8 0V11M6.5 11h11v8.5h-11z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /></svg></button>
+        <button type="button" id="menu-resize" class="menu-resize" aria-label="Resize sidebar" title="Drag to resize"></button>
       </aside>
       <div class="column">
         <main id="main"></main>
@@ -1398,7 +1630,7 @@
           mail: `<path ${stroke} d="M4.5 7.5h15v10h-15zM4.5 8l7.5 5.5L19.5 8"/>`,
           again: `<path ${stroke} d="M19 12a7 7 0 1 1-2.1-5M19 4.5V8h-3.5"/>`,
           open: `<path ${stroke} d="M5 12h12M13 7l5 5-5 5"/>`,
-          heart: `<path ${stroke} d="M12 19.2s-6.4-3.9-8.3-7.3C2.2 9.4 3.1 6.4 5.7 5.6c1.7-.5 3.3.2 4.3 1.8 1-1.6 2.6-2.3 4.3-1.8 2.6.8 3.5 3.8 2 6.3-1.9 3.4-8.3 7.3-8.3 7.3z"/>`,
+          heart: `<path ${stroke} d="M12 17.6 10.7 16.4C7.1 13.1 4.8 11 4.8 8.5A3.4 3.4 0 0 1 8.2 5.1c1.1 0 2.2.55 2.95 1.45L12 7.9l.85-1.35A3.7 3.7 0 0 1 15.8 5.1a3.4 3.4 0 0 1 3.4 3.4c0 2.5-2.3 4.6-5.9 7.9L12 17.6z"/>`,
         };
         return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name] || ""}</svg>`;
       }
@@ -1464,10 +1696,15 @@
         const date = new Date(iso.length === 10 ? iso + "T00:00:00Z" : iso);
         if (Number.isNaN(date.getTime())) return "";
         return new Intl.DateTimeFormat("en-US", {
-          month: "short",
+          month: "long",
+          day: "numeric",
           year: "numeric",
           timeZone: "UTC",
         }).format(date);
+      }
+
+      function shownDate(article) {
+        return article.writtenAt || article.savedAt || "";
       }
 
       function partsFromHash() {
@@ -1509,7 +1746,8 @@
 
       function currentListKey() {
         if (state.topic) return "topic:" + state.topic;
-        return "folder:" + (state.tag || "");
+        if (!state.tag || state.tag === "unread") return "folder:unread";
+        return "folder:" + state.tag;
       }
 
       function rememberArticles(list) {
@@ -1533,6 +1771,7 @@
       function mergePage(data, reset) {
         if (typeof data.sealed === "boolean") state.sealed = data.sealed;
         if (Array.isArray(data.folders)) state.folders = data.folders;
+        absorbReading(data);
         const rows = data.articles || [];
         rememberArticles(rows);
         if (Array.isArray(data.kept)) rememberArticles(data.kept);
@@ -1562,7 +1801,9 @@
         try {
           const params = new URLSearchParams({ from: String(from), limit: "20" });
           if (state.topic) params.set("topic", state.topic);
+          else if (state.tag === "all") params.set("folder", "all");
           else if (state.tag) params.set("folder", state.tag);
+          else params.set("folder", "unread");
           if (from === 0) {
             const ids = Object.keys(readingMap()).slice(0, 12);
             if (ids.length) params.set("also", ids.join(","));
@@ -1675,12 +1916,17 @@
         if (button) button.setAttribute("aria-expanded", open ? "true" : "false");
       }
 
+      function systemFolder(tag) {
+        return tag === "unread" || tag === "all";
+      }
+
       function renderTags(articles) {
         const nav = document.getElementById("tags");
         const button = document.getElementById("folders");
         const byId = new Map(articles.map((article) => [article.id, article]));
         const newest = new Map();
-        if (state.view === "quotes") {
+        const quotesView = state.view === "quotes";
+        if (quotesView) {
           for (const quote of shelfQuotes()) {
             const book = bookOf(quote, byId.get(quote.articleId));
             if (!book) continue;
@@ -1689,23 +1935,32 @@
           }
         } else if (state.folders.length) {
           for (const folder of state.folders) {
-            if (folder && folder.name) newest.set(folder.name, String(folder.at || ""));
+            if (folder && folder.name && !systemFolder(folder.name)) newest.set(folder.name, String(folder.at || ""));
           }
         } else {
           for (const article of articles) {
             const stamp = String(article.savedAt || "");
             const folder = article.folder || "";
-            if (!folder) continue;
+            if (!folder || systemFolder(folder)) continue;
             const prev = newest.get(folder) || "";
             if (stamp > prev) newest.set(folder, stamp);
           }
         }
         const tags = [...newest.keys()];
-        if (!tags.length) {
+        const mobileMenu = window.matchMedia("(max-width: 760px)").matches;
+        const labelEl = button.querySelector(".menu-toggle-label");
+        const canAddFolder = !quotesView;
+        if (!tags.length && !canAddFolder) {
           nav.hidden = true;
           nav.innerHTML = "";
-          button.hidden = true;
-          foldersOpen = false;
+          if (mobileMenu) {
+            button.hidden = false;
+            if (labelEl) labelEl.textContent = "Menu";
+            button.setAttribute("aria-label", "Menu");
+          } else {
+            button.hidden = true;
+            foldersOpen = false;
+          }
           paintFolders();
           return;
         }
@@ -1714,27 +1969,35 @@
         } else {
           tags.sort((a, b) => a.localeCompare(b));
         }
-        const view = state.view === "quotes" ? "quotes" : "articles";
+        const view = quotesView ? "quotes" : "articles";
         const rank = state.folderOrder === "recent" ? "recent" : "alpha";
-        const label = view === "quotes" ? "Books" : "Folders";
-        const live = tags.filter((tag) => !archivedTag(tag));
+        const label = quotesView ? "Books" : "Folders";
+        const live = tags.filter((tag) => !archivedTag(tag) && !systemFolder(tag));
         const archived = tags.filter((tag) => archivedTag(tag));
         const link = (tag) => {
           const on = state.tag === tag ? ' aria-current="true"' : "";
           return `<a href="${hash([view, tag])}" data-folder="${esc(tag)}"${on}>${esc(folderLabel(tag))}</a>`;
         };
+        const unreadOn = !state.tag || state.tag === "unread" ? ' aria-current="true"' : "";
+        const allOn = state.tag === "all" ? ' aria-current="true"' : "";
+        const system = quotesView
+          ? ""
+          : `<div class="folder-system"><a href="${hash([view])}" data-folder="unread"${unreadOn}>Unread</a><a href="${hash([view, "all"])}"${allOn}>All</a></div>`;
         const plain = archived.find((tag) => tag === "archive");
         const themes = archived.filter((tag) => tag !== "archive");
         const head = plain
           ? `<a class="folder-head" href="${hash([view, plain])}" data-folder="${esc(plain)}"${state.tag === plain ? ' aria-current="true"' : ""}>Archive</a>`
           : `<p class="menu-label">Archive</p>`;
         const archiveBlock = archived.length ? `<div class="folder-group">${head}${themes.map(link).join("")}</div>` : "";
+        const rest = live.length || archived.length ? `<div class="folder-rest">${live.map(link).join("")}${archiveBlock}</div>` : "";
+        const addFolder = canAddFolder
+          ? `<form class="folder-new" data-act="folder"><input name="folder" aria-label="New folder" placeholder="New folder" maxlength="32" autocomplete="off"></form>`
+          : "";
         nav.hidden = false;
         button.hidden = false;
-        const labelEl = button.querySelector(".menu-toggle-label");
-        if (labelEl) labelEl.textContent = label;
-        button.setAttribute("aria-label", label);
-        nav.innerHTML = `<div class="menu-label-row"><p class="menu-label">${label}</p><p class="folder-rank"><button type="button" class="icon" data-rank="alpha" aria-pressed="${rank === "alpha" ? "true" : "false"}" aria-label="A to Z" title="A to Z">${icon("alpha")}</button><button type="button" class="icon" data-rank="recent" aria-pressed="${rank === "recent" ? "true" : "false"}" aria-label="Recent" title="Recent">${icon("recent")}</button></p></div>${live.map(link).join("")}${archiveBlock}`;
+        if (labelEl) labelEl.textContent = mobileMenu ? "Menu" : label;
+        button.setAttribute("aria-label", mobileMenu ? "Menu" : label);
+        nav.innerHTML = `<div class="menu-label-row"><p class="menu-label">${label}</p><p class="folder-rank"><button type="button" class="icon" data-rank="alpha" aria-pressed="${rank === "alpha" ? "true" : "false"}" aria-label="A to Z" title="A to Z">${icon("alpha")}</button><button type="button" class="icon" data-rank="recent" aria-pressed="${rank === "recent" ? "true" : "false"}" aria-label="Recent" title="Recent">${icon("recent")}</button></p></div>${system}${rest}${addFolder}`;
         paintFolders();
       }
 
@@ -1753,7 +2016,7 @@
         const bits = [];
         if (article.site) bits.push(article.site);
         if (article.sample) bits.push("Sample");
-        const date = when(article.savedAt);
+        const date = when(shownDate(article));
         if (date) bits.push(date);
         const minutes = readingTime(article);
         if (minutes) bits.push(minutes);
@@ -1848,12 +2111,13 @@
           ? `<img class="piece-preview" src="${esc(preview.image)}" alt="${esc(preview.alt || "")}" referrerpolicy="no-referrer">`
           : "";
         const byline = article.author ? `<span class="byline">${esc(stripMarks(article.author))}</span>` : "";
-        return `<li>${heartButton(article)}<a draggable="true" data-article="${esc(article.id)}" href="${hash(["read", article.id])}">${image}<span class="piece-title">${esc(article.title)}</span><time datetime="${esc(article.savedAt)}">${esc(when(article.savedAt))}</time>${byline}${source ? `<span class="piece-source">${esc(source)}</span>` : ""}${tags ? `<span class="piece-tags">${esc(tags)}</span>` : ""}</a></li>`;
+        const stamped = shownDate(article);
+        return `<li>${heartButton(article)}<a draggable="true" data-article="${esc(article.id)}" href="${hash(["read", article.id])}">${image}<span class="piece-title">${esc(article.title)}</span><time datetime="${esc(stamped)}">${esc(when(stamped))}</time>${byline}${source ? `<span class="piece-source">${esc(source)}</span>` : ""}${tags ? `<span class="piece-tags">${esc(tags)}</span>` : ""}</a></li>`;
       }
 
       function quoteRow(quote, article, gathered) {
         const title = article ? article.title : "A piece no longer on the shelf";
-        const date = article ? when(article.savedAt) : "";
+        const date = article ? when(shownDate(article)) : "";
         const from = date ? `${title} · ${date}` : title;
         const source = gathered ? "" : `<span>${esc(from)}</span>`;
         const ink = gathered ? "" : ` data-ink="${esc(quote.ink || "yellow")}"`;
@@ -1944,6 +2208,51 @@
         }
       }
 
+      function absorbReading(data) {
+        if (!data || typeof data.reading !== "object" || data.reading === null) return false;
+        const map = readingMap();
+        let changed = false;
+        for (const [id, spot] of Object.entries(data.reading)) {
+          if (!id || !spot || typeof spot !== "object") continue;
+          const block = Number(spot.block);
+          if (!Number.isFinite(block) || block < 0) continue;
+          const at = Number(spot.at) || 0;
+          const cur = map[id];
+          if (cur && (cur.at || 0) >= at) continue;
+          map[id] = { at: at || Date.now(), block: Math.floor(block) };
+          changed = true;
+        }
+        if (changed) saveReading(map);
+        return changed;
+      }
+
+      let placeSync = 0;
+
+      function syncPlace(articleId, spot) {
+        if (!articleId || state.locked) return;
+        const flight = ++placeSync;
+        const body = spot
+          ? { kind: "place", articleId, block: spot.block }
+          : { kind: "place", articleId, clear: true };
+        api(body)
+          .then((data) => {
+            if (flight !== placeSync) return;
+            absorbReading(data);
+          })
+          .catch(() => {
+            /* the local place still stands until the shelf answers */
+          });
+      }
+
+      function dropReading(articleId, sync) {
+        if (!articleId) return;
+        const map = readingMap();
+        if (!map[articleId]) return;
+        delete map[articleId];
+        saveReading(map);
+        if (sync !== false) syncPlace(articleId, null);
+      }
+
       function storyLetter(article) {
         const words = String(article.title || "")
           .split(/\s+/)
@@ -1958,8 +2267,9 @@
         return state.articles.filter((article) => {
           if (!map[article.id] || !hasProse(article)) return false;
           if (state.topic) return (article.tags || []).includes(state.topic);
-          if (state.tag) return article.folder === state.tag;
-          return true;
+          if (state.tag === "all") return true;
+          if (!state.tag || state.tag === "unread") return !archivedTag(article.folder);
+          return article.folder === state.tag;
         });
       }
 
@@ -1976,36 +2286,30 @@
             const face = preview
               ? `<img class="story-photo" src="${esc(preview.image)}" alt="" data-letter="${esc(letter)}" referrerpolicy="no-referrer">`
               : `<span class="story-letter">${esc(letter)}</span>`;
-            return `<li><a href="${hash(["read", article.id])}" data-reading="${esc(article.id)}" title="Right-click to drop this"><span class="story"><span class="story-face">${face}</span></span><span class="story-title">${esc(article.title)}</span></a></li>`;
+            return `<li><a href="${hash(["read", article.id])}" data-reading="${esc(article.id)}" title="Press and hold to drop this"><span class="story"><span class="story-face">${face}</span></span><span class="story-title">${esc(article.title)}</span></a></li>`;
           })
           .join("");
         return `<section class="continue" aria-label="Continue reading"><p class="menu-label">Continue reading</p><ul>${items}</ul></section>`;
       }
 
-      function rememberPlace() {
+      function rememberPlace(opts) {
         if (state.view !== "read" || !state.articleId) return;
         const article = articleById(state.articleId);
         const body = document.getElementById("body");
         if (!article || !body || !hasProse(article)) return;
         const nodes = [...body.querySelectorAll("[data-block]")];
         if (!nodes.length) return;
-        const map = readingMap();
-        const end = body.getBoundingClientRect().bottom;
-        const started = window.scrollY > 160;
-        if (started && end < window.innerHeight + 64) {
-          if (map[article.id]) {
-            delete map[article.id];
-            saveReading(map);
-          }
-          return;
-        }
-        if (!started) return;
+        if (window.scrollY <= 120) return;
+        const topPad = window.matchMedia("(max-width: 760px)").matches ? 120 : 96;
         let block = 0;
         for (const node of nodes) {
-          if (node.getBoundingClientRect().top <= 96) block = Number(node.dataset.block) || 0;
+          if (node.getBoundingClientRect().top <= topPad) block = Number(node.dataset.block) || 0;
         }
-        map[article.id] = { at: Date.now(), block };
+        const spot = { at: Date.now(), block };
+        const map = readingMap();
+        map[article.id] = spot;
         saveReading(map);
+        if (opts && opts.sync) syncPlace(article.id, spot);
       }
 
       function resumeReading() {
@@ -2014,7 +2318,8 @@
         const go = () => {
           const node = document.querySelector(`#body [data-block="${spot.block}"]`);
           if (!node || state.view !== "read" || state.quoteId) return;
-          const target = node.getBoundingClientRect().top + window.scrollY - 28;
+          const pad = window.matchMedia("(max-width: 760px)").matches ? 72 : 28;
+          const target = node.getBoundingClientRect().top + window.scrollY - pad;
           window.scrollTo(0, Math.max(0, target));
         };
         go();
@@ -2039,9 +2344,11 @@
         }
         const empty = state.topic
           ? `Nothing tagged ${esc(state.topic)}.`
-          : state.tag
-            ? "Nothing in that folder."
-            : "The shelf is empty.";
+          : state.tag === "all"
+            ? "The shelf is empty."
+            : !state.tag || state.tag === "unread"
+              ? "Nothing unread."
+              : "Nothing in that folder.";
         const more = state.listDone ? "" : `<p class="more" data-more="articles">More of the shelf.</p>`;
         main.innerHTML = `${lede ? `<p class="lede">${lede}</p>` : ""}${continueRow(continuePool())}${rows ? `<ul class="pieces">${rows}</ul>` : `<p class="empty">${empty}</p>`}${more}`;
         watchMore();
@@ -2463,6 +2770,10 @@
         main.innerHTML = `<div class="stack"><h1 class="brand">Bookmark</h1><p class="lede">This shelf is locked. This browser stays signed in.</p><form data-act="mail"><div class="form-actions"><button type="submit" class="icon" aria-label="Email me a code" title="Email me a code">${icon("mail")}</button></div></form><form data-act="unlock"><label for="password">Key</label><input id="password" name="password" type="password" autocomplete="current-password" required><p id="notice" class="notice" role="status">${esc(state.error)}</p><div class="form-actions"><button type="submit" class="icon" aria-label="Open" title="Open">${icon("open")}</button></div></form></div>`;
       }
 
+      function revealMenu() {
+        document.querySelector(".menu").classList.remove("menu-away");
+      }
+
       function render() {
         hideFloats();
         const nav = document.querySelector(".menu-views");
@@ -2476,6 +2787,7 @@
           document.getElementById("lock").hidden = true;
           document.getElementById("search").hidden = true;
           document.title = "Bookmark";
+          revealMenu();
           main.innerHTML = `<p class="lede">${esc(state.loadError)}</p>`;
           return;
         }
@@ -2488,6 +2800,7 @@
           document.getElementById("lock").hidden = true;
           document.getElementById("search").hidden = true;
           document.title = "Bookmark";
+          revealMenu();
           renderLock();
           return;
         }
@@ -2499,6 +2812,7 @@
         if (changed) {
           state.error = "";
           foldersOpen = false;
+          revealMenu();
         }
         lastKey = key;
         Object.assign(state, route);
@@ -2615,7 +2929,10 @@
           state.articles = state.articles.filter((article) => article.id !== data.removedArticle);
           state.homeIds = state.homeIds.filter((id) => id !== data.removedArticle);
           state.quotes = state.quotes.filter((quote) => quote.articleId !== data.removedArticle);
+          dropReading(data.removedArticle, false);
         }
+        if (Array.isArray(data.folders)) state.folders = data.folders;
+        absorbReading(data);
         return data;
       }
 
@@ -2747,16 +3064,56 @@
         }
       }, true);
 
+      function abandonStory(story) {
+        if (!story || !story.dataset.reading) return;
+        dropReading(story.dataset.reading);
+        if (state.view === "articles") render();
+      }
+
       main.addEventListener("contextmenu", (event) => {
         const story = event.target.closest && event.target.closest(".continue [data-reading]");
         if (!story) return;
         event.preventDefault();
-        const map = readingMap();
-        if (!map[story.dataset.reading]) return;
-        delete map[story.dataset.reading];
-        saveReading(map);
-        render();
+        abandonStory(story);
       });
+
+      (() => {
+        let hold = 0;
+        let target = null;
+        let startX = 0;
+        let startY = 0;
+        main.addEventListener(
+          "pointerdown",
+          (event) => {
+            const story = event.target.closest && event.target.closest(".continue [data-reading]");
+            if (!story || event.pointerType === "mouse") return;
+            target = story;
+            startX = event.clientX;
+            startY = event.clientY;
+            clearTimeout(hold);
+            hold = setTimeout(() => {
+              if (!target) return;
+              abandonStory(target);
+              target = null;
+            }, 550);
+          },
+          { passive: true }
+        );
+        const cancelHold = () => {
+          clearTimeout(hold);
+          target = null;
+        };
+        main.addEventListener("pointerup", cancelHold);
+        main.addEventListener("pointercancel", cancelHold);
+        main.addEventListener(
+          "pointermove",
+          (event) => {
+            if (!target) return;
+            if (Math.abs(event.clientX - startX) + Math.abs(event.clientY - startY) > 12) cancelHold();
+          },
+          { passive: true }
+        );
+      })();
 
       main.addEventListener("click", async (event) => {
         const groupButton = event.target.closest("[data-group]");
@@ -2835,11 +3192,7 @@
           try {
             const id = state.articleId;
             await api({ kind: "remove", articleId: id });
-            const map = readingMap();
-            if (map[id]) {
-              delete map[id];
-              saveReading(map);
-            }
+            dropReading(id, false);
             location.hash = "#articles";
           } catch (error) {
             say(error.message);
@@ -2869,18 +3222,51 @@
           .find((part) => part && !part.startsWith("#")) || "";
       }
 
+      let dragChip = null;
+
+      function clearDragChip() {
+        if (dragChip && dragChip.parentNode) dragChip.parentNode.removeChild(dragChip);
+        dragChip = null;
+      }
+
+      function placeDragChip(event, row) {
+        clearDragChip();
+        const article = articleById(row.dataset.article);
+        const title =
+          (article && article.title) ||
+          (row.querySelector(".piece-title") || row).textContent.trim() ||
+          "Piece";
+        const chip = document.createElement("div");
+        chip.className = "drag-chip";
+        chip.setAttribute("aria-hidden", "true");
+        chip.innerHTML = `${icon("piece")}<span></span>`;
+        chip.querySelector("span").textContent = title;
+        document.body.appendChild(chip);
+        dragChip = chip;
+        const width = Math.min(chip.offsetWidth, 224);
+        event.dataTransfer.setDragImage(chip, Math.round(width * 0.2), 18);
+      }
+
       main.addEventListener("dragstart", (event) => {
         const row = event.target.closest && event.target.closest("[data-article]");
         if (!row) return;
         event.dataTransfer.setData("text/plain", row.dataset.article);
         event.dataTransfer.effectAllowed = "move";
         row.classList.add("dragging");
+        placeDragChip(event, row);
+        document.body.classList.add("is-filing");
+        if (window.matchMedia("(max-width: 760px)").matches && !foldersOpen) {
+          foldersOpen = true;
+          paintFolders();
+        }
       });
 
       main.addEventListener("dragend", (event) => {
         const row = event.target.closest && event.target.closest("[data-article]");
         if (row) row.classList.remove("dragging");
+        document.body.classList.remove("is-filing");
         document.querySelectorAll(".folder-drop").forEach((link) => link.classList.remove("folder-drop"));
+        clearDragChip();
       });
 
       const folders = document.getElementById("tags");
@@ -2906,10 +3292,13 @@
         if (!link) return;
         event.preventDefault();
         link.classList.remove("folder-drop");
+        document.body.classList.remove("is-filing");
+        clearDragChip();
         const articleId = event.dataTransfer.getData("text/plain");
-        if (!articleId || !link.dataset.folder) return;
+        const folder = link.dataset.folder || "";
+        if (!articleId || !folder || folder === "all") return;
         try {
-          await api({ kind: "file", articleId, folder: link.dataset.folder });
+          await api({ kind: "file", articleId, folder });
           state.error = "";
           render();
         } catch (error) {
@@ -3042,12 +3431,12 @@
       }
 
       function placePair(rect) {
-        const gap = 8;
+        const gap = 10;
         const total = keep.offsetWidth + gap + letgo.offsetWidth;
         const left = Math.min(Math.max(8, rect.left), window.innerWidth - total - 8);
-        const above = rect.top > 56;
-        const top = above ? rect.top : rect.bottom + 8;
-        const transform = above ? "translate(0, calc(-100% - 8px))" : "none";
+        const above = rect.top > 72;
+        const top = above ? rect.top : rect.bottom + 10;
+        const transform = above ? "translate(0, calc(-100% - 10px))" : "none";
         keep.style.left = left + "px";
         keep.style.top = top + "px";
         keep.style.transform = transform;
@@ -3075,14 +3464,14 @@
       }
 
       function placeFloat(button, rect) {
-        const width = button.offsetWidth || 160;
+        const width = button.offsetWidth || 200;
         const left = Math.min(Math.max(8, rect.left), window.innerWidth - width - 8);
         button.style.left = left + "px";
-        if (rect.top > 56) {
+        if (rect.top > 72) {
           button.style.top = rect.top + "px";
-          button.style.transform = "translate(0, calc(-100% - 8px))";
+          button.style.transform = "translate(0, calc(-100% - 10px))";
         } else {
-          button.style.top = rect.bottom + 8 + "px";
+          button.style.top = rect.bottom + 10 + "px";
           button.style.transform = "none";
         }
         button.classList.add("shown");
@@ -3108,10 +3497,23 @@
         placeFloat(keep, found.rect);
       }
 
+      function unwrapMark(mark) {
+        const parent = mark.parentNode;
+        if (!parent) return;
+        while (mark.firstChild) parent.insertBefore(mark.firstChild, mark);
+        parent.removeChild(mark);
+        parent.normalize();
+      }
+
+      function marksFor(quoteId) {
+        return [...document.querySelectorAll(`#body mark[data-quote="${CSS.escape(quoteId)}"]`)];
+      }
+
       let penDown = false;
       let penPress = null;
       let penHandled = false;
-      let choosing = false;
+      let selecting = false;
+      let tmpInk = 0;
 
       function holdSelection(event) {
         penDown = true;
@@ -3121,6 +3523,11 @@
         if (event.currentTarget === keep && pen) penPress = { kind: "ink", ink: pen.dataset.ink };
         else if (event.currentTarget === letgo) penPress = { kind: "let-go" };
         else penPress = null;
+      }
+
+      function showPensNow() {
+        selecting = false;
+        considerSelection();
       }
 
       async function chooseInk(ink) {
@@ -3135,26 +3542,52 @@
         window.getSelection()?.removeAllRanges();
         if (quoteId) {
           if (same) return;
+          const previous = marksFor(quoteId).map((mark) => mark.dataset.ink || "yellow");
+          marksFor(quoteId).forEach((mark) => {
+            mark.dataset.ink = ink;
+          });
           try {
             await api({ kind: "ink", id: quoteId, ink });
             state.error = "";
-            render();
           } catch (error) {
+            marksFor(quoteId).forEach((mark, index) => {
+              mark.dataset.ink = previous[index] || "yellow";
+            });
             say(error.message);
           }
           return;
         }
         if (!text || !articleId) return;
         const article = articleById(articleId);
-        if (!article || !passageOf(article).includes(flat(text))) {
+        const cleaned = flat(text);
+        if (!article || !passageOf(article).includes(cleaned)) {
           say("That passage isn't in the piece.");
           return;
         }
+        const body = document.getElementById("body");
+        const provisional = {
+          id: "tmp-" + String(++tmpInk),
+          articleId,
+          text: cleaned,
+          ink,
+          at: new Date().toISOString(),
+        };
+        state.quotes.unshift(provisional);
+        if (body) applyQuotes(body, [provisional]);
         try {
-          await api({ kind: "keep", articleId, text: flat(text), ink });
+          const data = await api({ kind: "keep", articleId, text: cleaned, ink });
           state.error = "";
-          render();
+          const real = data.quote;
+          if (real && real.id) {
+            marksFor(provisional.id).forEach((mark) => {
+              mark.dataset.quote = real.id;
+              mark.dataset.ink = real.ink || ink;
+            });
+          }
+          state.quotes = state.quotes.filter((quote) => quote.id !== provisional.id);
         } catch (error) {
+          marksFor(provisional.id).forEach(unwrapMark);
+          state.quotes = state.quotes.filter((quote) => quote.id !== provisional.id);
           say(error.message);
         }
       }
@@ -3165,11 +3598,22 @@
         const id = letgo.dataset.id;
         hideFloats();
         if (!id) return;
+        const snapshot = marksFor(id).map((mark) => mark.cloneNode(true));
+        marksFor(id).forEach(unwrapMark);
         try {
           await api({ kind: "let-go", id });
           state.error = "";
-          render();
         } catch (error) {
+          const body = document.getElementById("body");
+          if (body && snapshot.length) {
+            state.quotes.unshift({
+              id,
+              articleId: state.articleId,
+              text: flat(snapshot.map((mark) => mark.textContent).join("")),
+              ink: snapshot[0].dataset.ink || "yellow",
+            });
+            applyQuotes(body, state.quotes.filter((quote) => quote.id === id));
+          }
           say(error.message);
         }
       }
@@ -3194,18 +3638,27 @@
       });
       letgo.addEventListener("click", () => releaseLine());
       document.addEventListener("pointerdown", (event) => {
-        if (event.target.closest && event.target.closest("#keep, #letgo")) return;
-        choosing = true;
+        if (event.target.closest("#keep, #letgo")) return;
+        selecting = true;
+        if (event.target.closest("mark")) return;
+        if (window.getSelection && String(window.getSelection())) return;
+        hideFloats();
       });
       document.addEventListener("pointerup", () => {
-        choosing = false;
-        considerSelection();
+        requestAnimationFrame(showPensNow);
       });
+      document.addEventListener("pointercancel", () => {
+        selecting = false;
+      });
+      document.addEventListener("touchend", () => {
+        requestAnimationFrame(showPensNow);
+      }, { passive: true });
       document.addEventListener("keyup", (event) => {
         if (event.key === "Shift" || event.key.startsWith("Arrow")) considerSelection();
       });
       document.addEventListener("selectionchange", () => {
-        if (penDown || choosing || state.view !== "read") return;
+        if (penDown || state.view !== "read") return;
+        if (selecting && !keep.classList.contains("shown")) return;
         considerSelection();
       });
       window.addEventListener("scroll", () => {
@@ -3228,11 +3681,7 @@
         clearTimeout(placeTimer);
         placeTimer = setTimeout(rememberPlace, 280);
       }, { passive: true });
-      window.addEventListener("pagehide", rememberPlace);
-      document.addEventListener("mousedown", (event) => {
-        if (event.target.closest("#keep, #letgo, mark")) return;
-        hideFloats();
-      });
+      window.addEventListener("pagehide", () => rememberPlace({ sync: true }));
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") hideFloats();
       });
@@ -3272,6 +3721,13 @@
         paintFolders();
       });
 
+      document.querySelector(".menu-views").addEventListener("click", (event) => {
+        if (!event.target.closest("a")) return;
+        if (!window.matchMedia("(max-width: 760px)").matches) return;
+        foldersOpen = false;
+        paintFolders();
+      });
+
       document.addEventListener("keydown", (event) => {
         if (event.key !== "Escape" || !foldersOpen) return;
         foldersOpen = false;
@@ -3295,11 +3751,107 @@
         else renderTags(shelfArticles());
       });
 
+      document.getElementById("tags").addEventListener("submit", async (event) => {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement) || form.dataset.act !== "folder") return;
+        event.preventDefault();
+        const folder = String(new FormData(form).get("folder") || "").trim();
+        if (!folder) return;
+        try {
+          const data = await api({ kind: "folder", folder });
+          state.error = "";
+          const name = (data && data.folder) || folder;
+          location.hash = hash(["articles", name]);
+        } catch (error) {
+          say(error.message);
+        }
+      });
+
+      (() => {
+        const menu = document.querySelector(".menu");
+        const mobile = window.matchMedia("(max-width: 760px)");
+        let lastY = window.scrollY;
+        let ticking = false;
+        function syncMenu() {
+          ticking = false;
+          if (!mobile.matches || menu.classList.contains("folders-open")) {
+            menu.classList.remove("menu-away");
+            lastY = window.scrollY;
+            return;
+          }
+          const y = Math.max(0, window.scrollY);
+          const delta = y - lastY;
+          if (y < 56) menu.classList.remove("menu-away");
+          else if (delta > 8) menu.classList.add("menu-away");
+          else if (delta < -8) menu.classList.remove("menu-away");
+          lastY = y;
+        }
+        window.addEventListener(
+          "scroll",
+          () => {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(syncMenu);
+          },
+          { passive: true }
+        );
+        mobile.addEventListener("change", syncMenu);
+      })();
+
+      (() => {
+        const handle = document.getElementById("menu-resize");
+        const mobile = window.matchMedia("(max-width: 760px)");
+        const min = 168;
+        const max = 380;
+        const saved = Number(localStorage.getItem("bookmark-menu-width") || 0);
+        if (saved >= min && saved <= max) {
+          document.documentElement.style.setProperty("--menu-width", saved + "px");
+        }
+        let dragging = false;
+        function setWidth(px) {
+          const width = Math.min(max, Math.max(min, Math.round(px)));
+          document.documentElement.style.setProperty("--menu-width", width + "px");
+          return width;
+        }
+        handle.addEventListener("pointerdown", (event) => {
+          if (mobile.matches || event.button) return;
+          dragging = true;
+          handle.setPointerCapture(event.pointerId);
+          document.body.classList.add("menu-resizing");
+          event.preventDefault();
+        });
+        handle.addEventListener("pointermove", (event) => {
+          if (!dragging) return;
+          setWidth(event.clientX);
+        });
+        function endDrag(event) {
+          if (!dragging) return;
+          dragging = false;
+          document.body.classList.remove("menu-resizing");
+          try {
+            handle.releasePointerCapture(event.pointerId);
+          } catch {
+            /* already released */
+          }
+          const raw = getComputedStyle(document.documentElement).getPropertyValue("--menu-width");
+          const width = Number.parseFloat(raw);
+          if (width) {
+            try {
+              localStorage.setItem("bookmark-menu-width", String(Math.round(width)));
+            } catch {
+              /* the width still applies for this visit */
+            }
+          }
+        }
+        handle.addEventListener("pointerup", endDrag);
+        handle.addEventListener("pointercancel", endDrag);
+      })();
+
       load().then(() => {
         render();
         window.addEventListener("scroll", maybeMore, { passive: true });
         window.addEventListener("hashchange", () => {
-          rememberPlace();
+          rememberPlace({ sync: true });
           render();
         });
       });

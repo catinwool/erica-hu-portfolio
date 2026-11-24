@@ -161,6 +161,16 @@ function folderFrom(value) {
   return tagsFrom(value)[0] || "";
 }
 
+function archivedFolder(name) {
+  const folder = String(name || "");
+  return folder === "archive" || folder.startsWith("archived ");
+}
+
+function reservedFolder(name) {
+  const folder = String(name || "");
+  return folder === "unread" || folder === "all";
+}
+
 const TAG_STOP = new Set(
   `a an the of and or but if to in on for with at from by as into about over after before between through without within this that these those it its i you we they he she them their his her my our your me him us not no do does did be is are was were been being have has had will would can could should may might must shall just also than then too very really only even still already much many more most some any such own other another there here when where what which who how why all each every both few same one two first second last next part kind sort lot bit way ways thing things time times year years day days make makes made making get got getting go going went come came take took see saw look looking know knew say said says saying want wanted need needed like liked feel felt seem seemed people person something anything everything nothing someone actually maybe perhaps quite rather almost enough whole yet among amongst against along toward towards upon per via because although though while whether since until unless including around across onto off out up down back again once now always never often sometimes well good great little big long high new old right left yes dont doesnt didnt isnt arent wasnt werent cant couldnt wont wouldnt im ive thats theres youre lets were theyre however therefore anyway somehow somewhere everybody anybody better best hard else doing help helps able interested word words class book books idea ideas journey reader actual specific type entirely important possible certain father helped helping called asked told felt knew seemed started became using trying wanted usually probably point points example examples life world work place put keep use tell ask try start leave find give mean fact facts end ends lots bits acknowledgements acknowledgment acknowledgments acknowledgement foreword introduction notes different bring tools tool think thinks thought answer answers question questions detail details`.split(
     /\s+/
@@ -298,6 +308,36 @@ function uid() {
   return crypto.randomBytes(6).toString("hex");
 }
 
+function cleanReading(value, ids) {
+  if (!value || typeof value !== "object") return {};
+  const out = {};
+  for (const [key, spot] of Object.entries(value)) {
+    const id = cleanId(key);
+    if (!id || (ids && !ids.has(id))) continue;
+    if (!spot || typeof spot !== "object") continue;
+    const block = Number(spot.block);
+    const at = Number(spot.at);
+    if (!Number.isFinite(block) || block < 0) continue;
+    out[id] = {
+      at: Number.isFinite(at) && at > 0 ? Math.floor(at) : Date.now(),
+      block: Math.floor(block),
+    };
+  }
+  return out;
+}
+
+function cleanFolderNames(value) {
+  if (!Array.isArray(value)) return [];
+  const out = [];
+  for (const item of value) {
+    const name = folderFrom(typeof item === "string" ? item : item && item.name);
+    if (!name || out.includes(name)) continue;
+    out.push(name);
+    if (out.length >= 80) break;
+  }
+  return out;
+}
+
 function normalize(data) {
   const source = data && typeof data === "object" ? data : {};
   const articles = Array.isArray(source.articles) ? source.articles.map(cleanArticle).filter(Boolean) : [];
@@ -305,7 +345,12 @@ function normalize(data) {
   const quotes = Array.isArray(source.quotes)
     ? source.quotes.map(cleanQuote).filter((quote) => quote && ids.has(quote.articleId))
     : [];
-  return { articles, quotes };
+  return {
+    articles,
+    quotes,
+    reading: cleanReading(source.reading, ids),
+    folderNames: cleanFolderNames(source.folderNames),
+  };
 }
 
 function cleanBlocks(value) {
@@ -351,6 +396,7 @@ function cleanArticle(article) {
     ? article.paragraphs.map((paragraph) => cleanText(paragraph, 5000)).filter(Boolean).slice(0, 200)
     : [];
   const saved = String(article.savedAt || "");
+  const written = dayStamp(article.writtenAt);
   const legacyFolder = !Object.prototype.hasOwnProperty.call(article, "folder");
   const folder = folderFrom(legacyFolder ? article.tags : article.folder);
   const record = {
@@ -364,6 +410,7 @@ function cleanArticle(article) {
     tags: legacyFolder ? [] : tagsFrom(article.tags),
     paragraphs,
   };
+  if (written) record.writtenAt = written;
   const blocks = cleanBlocks(article.blocks);
   if (blocks.length) record.blocks = blocks;
   if (article.sample) record.sample = true;
@@ -674,6 +721,7 @@ function shelfArticle(article) {
     site: article.site || "",
     url: article.url || "",
     savedAt: article.savedAt,
+    writtenAt: article.writtenAt || "",
     folder: article.folder || "",
     tags: article.tags || [],
     sample: Boolean(article.sample),
@@ -686,16 +734,19 @@ function shelfArticle(article) {
   };
 }
 
-function folderIndex(articles) {
+function folderIndex(library) {
   const newest = new Map();
-  for (const article of articles || []) {
+  for (const name of library.folderNames || []) {
+    if (name && !reservedFolder(name)) newest.set(name, newest.get(name) || "");
+  }
+  for (const article of library.articles || []) {
     const folder = article.folder || "";
-    if (!folder) continue;
+    if (!folder || reservedFolder(folder)) continue;
     const stamp = String(article.savedAt || "");
     const prev = newest.get(folder) || "";
     if (stamp > prev) newest.set(folder, stamp);
   }
-  return [...newest.entries()].map(([name, at]) => ({ name, at }));
+  return [...newest.entries()].map(([name, at]) => ({ name, at: at || today() }));
 }
 
 function orderedArticles(library) {
@@ -708,12 +759,24 @@ function shelfPage(library, options) {
   let list = orderedArticles(library);
   const folder = String(options.folder || "");
   const topic = String(options.topic || "");
-  if (folder) list = list.filter((article) => (article.folder || "") === folder);
+  if (folder === "all") {
+    /* every piece on the shelf */
+  } else if (!folder || folder === "unread") {
+    list = list.filter((article) => !archivedFolder(article.folder));
+  } else {
+    list = list.filter((article) => (article.folder || "") === folder);
+  }
   if (topic) list = list.filter((article) => (article.tags || []).includes(topic));
   const slice = list.slice(from, from + limit).map(shelfArticle);
   const have = new Set(slice.map((article) => article.id));
   const kept = [];
-  for (const id of options.also || []) {
+  const also = [...(options.also || [])];
+  if (from === 0 && library.reading) {
+    for (const id of Object.keys(library.reading)) {
+      if (!also.includes(id)) also.push(id);
+    }
+  }
+  for (const id of also) {
     if (have.has(id)) continue;
     const article = (library.articles || []).find((item) => item.id === id);
     if (!article) continue;
@@ -723,6 +786,7 @@ function shelfPage(library, options) {
   const page = {
     articles: slice,
     kept,
+    reading: library.reading || {},
     more: from + slice.length < list.length,
     next: from + slice.length,
     total: list.length,
@@ -730,7 +794,7 @@ function shelfPage(library, options) {
     shelf: true,
     page: true,
   };
-  if (from === 0) page.folders = folderIndex(library.articles);
+  if (from === 0) page.folders = folderIndex(library);
   return page;
 }
 
@@ -738,6 +802,7 @@ function shelfLibrary(library) {
   return {
     articles: (library.articles || []).map(shelfArticle),
     quotes: library.quotes || [],
+    reading: library.reading || {},
     sealed: Boolean(password()),
     shelf: true,
   };
@@ -828,6 +893,45 @@ function hostnameOf(value) {
 function metaContent(document, selector) {
   const node = document.querySelector(selector);
   return node ? node.getAttribute("content") || "" : "";
+}
+
+function dayStamp(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toISOString().slice(0, 10);
+}
+
+function writtenAtFrom(document, readability) {
+  if (readability && readability.publishedTime) {
+    const fromReader = dayStamp(readability.publishedTime);
+    if (fromReader) return fromReader;
+  }
+  const metas = [
+    'meta[property="article:published_time"]',
+    'meta[property="og:published_time"]',
+    'meta[property="og:updated_time"]',
+    'meta[name="publishdate"]',
+    'meta[name="PublishDate"]',
+    'meta[name="pubdate"]',
+    'meta[name="date"]',
+    'meta[name="DC.date.issued"]',
+    'meta[name="dc.date"]',
+    'meta[name="sailthru.date"]',
+    'meta[itemprop="datePublished"]',
+    'meta[name="cXenseParse:recs:publishtime"]',
+  ];
+  for (const selector of metas) {
+    const stamp = dayStamp(metaContent(document, selector));
+    if (stamp) return stamp;
+  }
+  for (const node of document.querySelectorAll("time[datetime]")) {
+    const stamp = dayStamp(node.getAttribute("datetime"));
+    if (stamp) return stamp;
+  }
+  return "";
 }
 
 function absoluteUrl(value, base) {
@@ -1671,7 +1775,10 @@ async function parsePiece(html, pageUrl) {
   const metaAuthor = cleanText(metaContent(document, 'meta[name="author"]'), 120);
   const siteName = cleanText(metaContent(document, 'meta[property="og:site_name"]'), 120);
   const facebook = facebookPost(document);
-  if (facebook) return facebook;
+  if (facebook) {
+    const writtenAt = writtenAtFrom(document);
+    return writtenAt ? { ...facebook, writtenAt } : facebook;
+  }
   const poem = poemFrom(document);
   if (poem) {
     const site = siteName || hostnameOf(pageUrl);
@@ -1680,7 +1787,8 @@ async function parsePiece(html, pageUrl) {
     const author = cleanText((poet && poet.textContent) || metaAuthor, 120);
     if (!title) fail(400, "That page didn't give up a piece.");
     const blocks = poem.map((line) => ({ poem: line }));
-    return { title, author, site, paragraphs: poem.map((line) => line || " "), blocks };
+    const writtenAt = writtenAtFrom(document);
+    return { title, author, site, paragraphs: poem.map((line) => line || " "), blocks, writtenAt };
   }
   const authoredRoot = document.querySelector("#everything");
   const authoredHtml =
@@ -1713,7 +1821,8 @@ async function parsePiece(html, pageUrl) {
   const prose = piece.blocks.filter((block) => typeof block === "string" && block.length > 40);
   const proseChars = prose.reduce((sum, block) => sum + block.length, 0);
   if (!title || proseChars < 280 || (prose.length < 2 && proseChars < 400)) fail(400, "That page didn't give up a piece.");
-  return { title, author, site, paragraphs: piece.paragraphs, blocks: piece.blocks };
+  const writtenAt = writtenAtFrom(document, article);
+  return { title, author, site, paragraphs: piece.paragraphs, blocks: piece.blocks, writtenAt };
 }
 
 async function saveArticle(library, body) {
@@ -1759,6 +1868,7 @@ async function saveArticle(library, body) {
     paragraphs: parsed.paragraphs,
     blocks: parsed.blocks,
   };
+  if (parsed.writtenAt) article.writtenAt = parsed.writtenAt;
   const sampleIds = new Set(library.articles.filter((item) => item.sample).map((item) => item.id));
   library.articles = library.articles.filter((item) => !item.sample);
   library.quotes = library.quotes.filter((quote) => !sampleIds.has(quote.articleId));
@@ -1783,6 +1893,7 @@ async function refetchArticle(library, body) {
   if (parsed.title) article.title = parsed.title;
   if (parsed.author) article.author = parsed.author;
   if (parsed.site) article.site = parsed.site;
+  if (parsed.writtenAt) article.writtenAt = parsed.writtenAt;
   article.paragraphs = parsed.paragraphs;
   article.blocks = parsed.blocks;
   return { article };
@@ -1871,12 +1982,32 @@ function setTag(library, body, add) {
   return { article };
 }
 
+function folderKnown(library, folder) {
+  if (!folder) return false;
+  if ((library.folderNames || []).includes(folder)) return true;
+  return (library.articles || []).some((item) => item.folder === folder);
+}
+
+function makeFolder(library, body) {
+  const folder = folderFrom(body.folder || body.name);
+  if (!folder) fail(400, "Name the folder.");
+  if (reservedFolder(folder) || archivedFolder(folder)) fail(400, "That name is reserved.");
+  if (!Array.isArray(library.folderNames)) library.folderNames = [];
+  if (!library.folderNames.includes(folder)) library.folderNames.push(folder);
+  return { folder, folders: folderIndex(library) };
+}
+
 function fileArticle(library, body) {
   const article = findArticle(library, body.articleId);
+  if (body.clear || body.folder === "" || body.folder === "unread") {
+    if (!article.folder) return { article, duplicate: true };
+    article.folder = "";
+    return { article };
+  }
   const folder = folderFrom(body.folder);
   if (!folder) fail(400, "Choose a folder.");
-  const known = library.articles.some((item) => item.folder === folder);
-  if (!known) fail(400, "That folder isn't on the shelf.");
+  if (reservedFolder(folder)) fail(400, "That folder isn't on the shelf.");
+  if (!folderKnown(library, folder)) fail(400, "That folder isn't on the shelf.");
   if (article.folder === folder) return { article, duplicate: true };
   article.folder = folder;
   return { article };
@@ -1888,7 +2019,23 @@ function removeArticle(library, body) {
   library.articles = library.articles.filter((article) => article.id !== id);
   if (library.articles.length === before) fail(400, "That piece isn't on the shelf.");
   library.quotes = library.quotes.filter((quote) => quote.articleId !== id);
+  if (library.reading && library.reading[id]) delete library.reading[id];
   return { removedArticle: id };
+}
+
+function setPlace(library, body) {
+  const id = cleanId(body.articleId || body.id);
+  if (!id) fail(400, "Which piece?");
+  const article = (library.articles || []).find((item) => item.id === id);
+  if (!article) fail(400, "That piece isn't on the shelf.");
+  if (!library.reading || typeof library.reading !== "object") library.reading = {};
+  if (body.clear || body.done) {
+    delete library.reading[id];
+    return { reading: library.reading };
+  }
+  const block = Math.max(0, Math.floor(Number(body.block) || 0));
+  library.reading[id] = { at: Date.now(), block };
+  return { reading: library.reading };
 }
 
 function apply(library, body) {
@@ -1902,7 +2049,9 @@ function apply(library, body) {
   if (kind === "tag") return setTag(library, body, true);
   if (kind === "untag") return setTag(library, body, false);
   if (kind === "file") return fileArticle(library, body);
+  if (kind === "folder") return makeFolder(library, body);
   if (kind === "remove") return removeArticle(library, body);
+  if (kind === "place") return setPlace(library, body);
   fail(400, "That doesn't fit on the shelf.");
 }
 

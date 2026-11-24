@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Bookmark">
+  <rect width="512" height="512" rx="0" fill="#e8d5f7"/>
+  <path
+    fill="#5c3d82"
+    d="M148 108c0-10 8-18 18-18h98c52 0 92 28 92 78 0 34-18 58-46 70 38 10 64 38 64 80 0 56-44 92-108 92H166c-10 0-18-8-18-18V108zm72 36v92h42c30 0 50-16 50-46s-20-46-50-46h-42zm0 128v108h52c34 0 58-18 58-54s-24-54-58-54h-52z"
+  />
+</svg>
